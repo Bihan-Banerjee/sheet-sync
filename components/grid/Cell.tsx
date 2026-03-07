@@ -110,9 +110,17 @@ const Cell = memo(function Cell({
   const textStyle: React.CSSProperties = {
     fontWeight: format.bold ? 600 : 400,
     fontStyle: format.italic ? "italic" : "normal",
+    textDecoration: format.strikethrough ? "line-through" : "none",
     color: format.textColor ?? undefined,
     fontSize: format.fontSize ?? 13,
     textAlign: format.align ?? "left",
+    alignItems:
+      format.verticalAlign === "top"
+        ? "flex-start"
+        : format.verticalAlign === "bottom"
+        ? "flex-end"
+        : "center",
+    whiteSpace: format.wrap ? "normal" : "nowrap",
   };
 
   // Presence border color

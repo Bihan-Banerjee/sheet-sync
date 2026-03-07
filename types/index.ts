@@ -5,12 +5,16 @@ import type { Timestamp } from "firebase/firestore";
 export interface CellFormat {
   bold?: boolean;
   italic?: boolean;
+  strikethrough?: boolean;                               
   textColor?: string;
   bgColor?: string;
   fontSize?: number;
   align?: "left" | "center" | "right";
+  verticalAlign?: "top" | "middle" | "bottom";      
+  wrap?: boolean;                                   
+  border?: "all" | "outer" | "bottom" | "top" | "left" | "right"; 
+  numberFormat?: "number" | "integer" | "percent" | "currency" | "scientific"; 
 }
-
 export interface CellData {
   /** Raw user input — could be a formula like =SUM(A1:A3) or plain text */
   raw: string;
