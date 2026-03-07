@@ -495,16 +495,33 @@ export function computeCellValue(
  * Recompute all cells in the map and return an updated map
  * with computed values filled in. Call this after any cell edit.
  */
+/**
+ * Recompute all cells iteratively until values stabilize (to handle chained dependencies).
+ */
 export function recomputeAllCells(cells: CellMap): CellMap {
-  const updated: CellMap = {};
+  let currentCells = { ...cells };
+  let changed = true;
+  let iterations = 0;
+  const MAX_ITERATIONS = 10; 
 
-  for (const [id, cell] of Object.entries(cells)) {
-    const result = computeCellValue(id, cells);
-    updated[id] = {
-      ...cell,
-      computed: result.value,
-    };
+  while (changed && iterations < MAX_ITERATIONS) {
+    changed = false;
+    iterations++;
+    const nextCells: CellMap = {};
+
+    for (const [id, cell] of Object.entries(currentCells)) {
+      const result = computeCellValue(id, currentCells);
+      nextCells[id] = {
+        ...cell,
+        computed: result.value,
+      };
+
+      if (nextCells[id].computed !== currentCells[id].computed) {
+        changed = true;
+      }
+    }
+    currentCells = nextCells;
   }
 
-  return updated;
+  return currentCells;
 }

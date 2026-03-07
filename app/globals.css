@@ -4,10 +4,81 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #0A0A0F;
-  --surface: #111118;
-  --accent: #6366F1;
+@layer base {
+  :root {
+    /* Shadcn HSL Base (Light Mode) */
+    --background: 0 0% 98%;      
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
+
+    /* Spreadsheet Custom Theme (Light Mode) */
+    --surface: #FFFFFF;
+    --surface-2: #F4F4F5;
+    --surface-3: #E4E4E7;
+    --text-primary: #18181B;
+    --text-secondary: #52525B;
+    --text-dim: #A1A1AA;
+    --border-bright: #D4D4D8;
+    --accent: #6366F1;
+    --accent-hover: #4F46E5;
+    --accent-dim: #E0E7FF;
+    --success: #22C55E;
+    --warning: #F59E0B;
+    --error: #EF4444;
+  }
+
+  .dark {
+    /* Shadcn HSL Base (Dark Mode) */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    /* Spreadsheet Custom Theme (Dark Mode) */
+    --surface: #111118;
+    --surface-2: #1A1A24;
+    --surface-3: #2A2A3A;
+    --text-primary: #F1F1F5;
+    --text-secondary: #AAAAA0;
+    --text-dim: #8B8BA7;
+    --border-bright: #3A3A50;
+    --accent: #6366F1;
+    --accent-hover: #818CF8;
+    --accent-dim: rgba(99, 102, 241, 0.15); 
+    --success: #22C55E;
+    --warning: #F59E0B;
+    --error: #EF4444;
+  }
 }
 
 * {
@@ -16,8 +87,8 @@
 
 html,
 body {
-  background-color: var(--background);
-  color: #F1F1F5;
+  background-color: hsl(var(--background));
+  color: var(--text-primary);
   font-family: "Sora", system-ui, sans-serif;
   margin: 0;
   padding: 0;
@@ -30,28 +101,28 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #111118;
+  background: var(--surface);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2A2A3A;
+  background: var(--surface-3);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3A3A50;
+  background: var(--border-bright);
 }
 ::-webkit-scrollbar-corner {
-  background: #111118;
+  background: var(--surface);
 }
 
 /* Cell selection */
 .cell-selected {
-  box-shadow: 0 0 0 2px #6366F1 inset;
-  background-color: #6366F108;
+  box-shadow: 0 0 0 2px var(--accent) inset;
+  background-color: var(--accent-dim);
 }
 
 .cell-editing {
-  box-shadow: 0 0 0 2px #6366F1 inset, 0 0 0 4px #6366F120;
-  background-color: #111118;
+  box-shadow: 0 0 0 2px var(--accent) inset, 0 0 0 4px var(--accent-dim);
+  background-color: var(--surface);
   z-index: 10;
 }
 
@@ -75,15 +146,15 @@ body {
   font-family: "DM Mono", monospace;
   font-size: 13px;
   padding: 0 6px;
-  border-right: 1px solid #2A2A3A;
-  border-bottom: 1px solid #2A2A3A;
+  border-right: 1px solid var(--border-bright);
+  border-bottom: 1px solid var(--border-bright);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: cell;
   position: relative;
-  background: #0A0A0F;
-  color: #F1F1F5;
+  background: hsl(var(--background));
+  color: var(--text-primary);
   outline: none;
   display: flex;
   align-items: center;
@@ -92,22 +163,22 @@ body {
 }
 
 .grid-cell:hover:not(.cell-selected):not(.cell-editing) {
-  background: #111118;
+  background: var(--surface);
 }
 
 /* Formula bar */
 .formula-bar {
   font-family: "DM Mono", monospace;
   font-size: 13px;
-  background: #111118;
-  border: 1px solid #2A2A3A;
-  color: #F1F1F5;
+  background: var(--surface);
+  border: 1px solid var(--border-bright);
+  color: var(--text-primary);
   outline: none;
   transition: border-color 0.15s;
 }
 
 .formula-bar:focus {
-  border-color: #6366F1;
+  border-color: var(--accent);
 }
 
 /* Toast */
