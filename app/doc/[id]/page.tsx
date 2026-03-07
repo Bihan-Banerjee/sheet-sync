@@ -77,6 +77,15 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
           <SyncIndicator state={writeState} />
         </div>
 
+        {/* Active cell address pill */}
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-2 border border-border flex-shrink-0">
+          <span className="text-[10px] font-mono text-text-dim">cell</span>
+          <span className="text-xs font-mono font-medium text-accent">
+            {activeCellId}
+          </span>
+        </div>
+        <div className="w-px h-4 bg-border flex-shrink-0" />
+
         <div className="flex items-center gap-3">
           {/* Active Collaborators */}
           <div className="flex items-center -space-x-2 mr-2">

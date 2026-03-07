@@ -201,3 +201,11 @@ export function expandRange(range: string): CellId[] {
   }
   return cells;
 }
+
+export type DragType = "column" | "row";
+
+export interface DragState {
+  type: DragType;
+  index: number;        // col number (1-based) or row number (1-based)
+  overIndex: number;    // current hover target
+}

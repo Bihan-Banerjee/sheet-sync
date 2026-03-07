@@ -19,12 +19,13 @@ interface CellProps {
   isSelected: boolean;
   isEditing: boolean;
   isInSelection: boolean;
-  presence: PresenceData | null; // another user on this cell
+  presence: PresenceData | null;
   onSelect: (cellId: CellId, e: React.MouseEvent) => void;
   onStartEdit: (cellId: CellId) => void;
   onCommitEdit: (cellId: CellId, value: string) => void;
   onCancelEdit: (cellId: CellId) => void;
   onNavigate: (direction: "up" | "down" | "left" | "right" | "tab" | "enter") => void;
+  onCornerResize?: (cellId: CellId, dx: number, dy: number) => void;
 }
 
 const Cell = memo(function Cell({
@@ -43,11 +44,12 @@ const Cell = memo(function Cell({
   onCommitEdit,
   onCancelEdit,
   onNavigate,
+  onCornerResize,
 }: CellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [editValue, setEditValue] = useState(rawValue);
+  const cornerDragStart = useRef<{ x: number; y: number } | null>(null);
 
-  // Sync edit value when editing starts
   useEffect(() => {
     if (isEditing) {
       setEditValue(rawValue);
@@ -59,15 +61,14 @@ const Cell = memo(function Cell({
   }, [isEditing, rawValue]);
 
   const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      onSelect(cellId, e);
-    },
+    (e: React.MouseEvent) => { onSelect(cellId, e); },
     [cellId, onSelect]
   );
 
-  const handleDoubleClick = useCallback(() => {
-    onStartEdit(cellId);
-  }, [cellId, onStartEdit]);
+  const handleDoubleClick = useCallback(
+    () => { onStartEdit(cellId); },
+    [cellId, onStartEdit]
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -95,7 +96,51 @@ const Cell = memo(function Cell({
     [cellId, editValue, onCommitEdit, onCancelEdit, onNavigate]
   );
 
-  // Cell container style
+  // Corner resize drag
+  const handleCornerMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      cornerDragStart.current = { x: e.clientX, y: e.clientY };
+
+      const onMouseMove = (me: MouseEvent) => {
+        if (!cornerDragStart.current) return;
+        const dx = me.clientX - cornerDragStart.current.x;
+        const dy = me.clientY - cornerDragStart.current.y;
+        cornerDragStart.current = { x: me.clientX, y: me.clientY };
+        onCornerResize?.(cellId, dx, dy);
+      };
+
+      const onMouseUp = () => {
+        cornerDragStart.current = null;
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+      };
+
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    },
+    [cellId, onCornerResize]
+  );
+
+  // Format number display
+  const formattedDisplay = useCallback((): string => {
+    if (!format.numberFormat || displayValue === "" || isNaN(Number(displayValue))) {
+      return displayValue;
+    }
+    const n = Number(displayValue);
+    switch (format.numberFormat) {
+      case "number":    return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      case "integer":   return Math.round(n).toLocaleString("en-US");
+      case "percent":   return (n / 100).toLocaleString("en-US", { style: "percent", minimumFractionDigits: 2 });
+      case "currency":  return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+      case "scientific":return n.toExponential(2).toUpperCase().replace("E+", "E+").replace("E-", "E-");
+      default:          return displayValue;
+    }
+  }, [displayValue, format.numberFormat]);
+
+  const isError = displayValue.startsWith("#") && displayValue.endsWith("!");
+
   const containerStyle: React.CSSProperties = {
     width,
     minWidth: width,
@@ -104,46 +149,44 @@ const Cell = memo(function Cell({
     minHeight: height,
     position: "relative",
     backgroundColor: format.bgColor ?? undefined,
+    // Border styles
+    ...(format.border === "all"    && { outline: "1px solid #3A3A50" }),
+    ...(format.border === "outer"  && { outline: "1px solid #3A3A50" }),
+    ...(format.border === "bottom" && { borderBottom: "1px solid #8B8BA7" }),
+    ...(format.border === "top"    && { borderTop: "1px solid #8B8BA7" }),
+    ...(format.border === "left"   && { borderLeft: "1px solid #8B8BA7" }),
+    ...(format.border === "right"  && { borderRight: "1px solid #8B8BA7" }),
   };
 
-  // Text style from format
   const textStyle: React.CSSProperties = {
     fontWeight: format.bold ? 600 : 400,
     fontStyle: format.italic ? "italic" : "normal",
     textDecoration: format.strikethrough ? "line-through" : "none",
-    color: format.textColor ?? undefined,
+    color: isError ? "#EF4444" : (format.textColor ?? undefined),
     fontSize: format.fontSize ?? 13,
     textAlign: format.align ?? "left",
-    alignItems:
-      format.verticalAlign === "top"
-        ? "flex-start"
-        : format.verticalAlign === "bottom"
-        ? "flex-end"
-        : "center",
     whiteSpace: format.wrap ? "normal" : "nowrap",
   };
-
-  // Presence border color
-  const presenceBorder = presence
-    ? `2px solid ${presence.color}`
-    : undefined;
 
   const cellClass = [
     "grid-cell",
     isSelected ? "cell-selected" : "",
     isInSelection && !isSelected ? "bg-accent-dim" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  ].filter(Boolean).join(" ");
+
+  const presenceBorder = presence ? `2px solid ${presence.color}` : undefined;
 
   return (
     <div
       className={cellClass}
       style={{
         ...containerStyle,
-        outline: presenceBorder ? presenceBorder : undefined,
+        outline: presenceBorder ?? containerStyle.outline,
         outlineOffset: "-2px",
         zIndex: isSelected || presence ? 1 : 0,
+        alignItems:
+          format.verticalAlign === "top" ? "flex-start" :
+          format.verticalAlign === "bottom" ? "flex-end" : "center",
       }}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
@@ -171,19 +214,25 @@ const Cell = memo(function Cell({
         />
       ) : (
         <span
-          className="w-full overflow-hidden text-ellipsis whitespace-nowrap px-1.5 select-none pointer-events-none"
+          className="w-full overflow-hidden text-ellipsis px-1.5 select-none pointer-events-none"
           style={{
             ...textStyle,
-            color: displayValue.startsWith("#") && displayValue.endsWith("!")
-              ? "#EF4444"
-              : textStyle.color,
-            fontStyle: displayValue.startsWith("#") && displayValue.endsWith("!")
-              ? "italic"
-              : textStyle.fontStyle,
+            display: "block",
+            lineHeight: `${height - 2}px`,
           }}
         >
-          {displayValue}
+          {formattedDisplay()}
         </span>
+      )}
+
+      {/* Corner resize handle — only on selected cell */}
+      {isSelected && onCornerResize && (
+        <div
+          className="absolute bottom-0 right-0 w-3 h-3 cursor-nwse-resize z-20 group/corner"
+          onMouseDown={handleCornerMouseDown}
+        >
+          <div className="absolute bottom-0.5 right-0.5 w-2 h-2 rounded-sm bg-accent opacity-80 group-hover/corner:opacity-100 group-hover/corner:scale-110 transition-all" />
+        </div>
       )}
     </div>
   );

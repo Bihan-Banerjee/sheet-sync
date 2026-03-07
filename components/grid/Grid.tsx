@@ -13,6 +13,7 @@ import RowHeader from "./RowHeader";
 import {
   toCellId,
   colNumberToLetter,
+  colLetterToNumber,
   parseCellId,
   GRID_CONSTANTS,
 } from "@/types";
@@ -37,6 +38,9 @@ interface GridProps {
   onRowResize: (row: number, height: number) => void;
   onActiveCellChange: (cellId: CellId | null) => void;
   onSelectionChange?: (cellId: CellId, raw: string) => void;
+  // Reorder callbacks — Grid manages visual order, parent persists
+  onColumnsReorder?: (from: number, to: number) => void;
+  onRowsReorder?: (from: number, to: number) => void;
 }
 
 export default function Grid({
@@ -51,6 +55,8 @@ export default function Grid({
   onRowResize,
   onActiveCellChange,
   onSelectionChange,
+  onColumnsReorder,
+  onRowsReorder,
 }: GridProps) {
   const { TOTAL_COLS, TOTAL_ROWS, DEFAULT_COL_WIDTH, DEFAULT_ROW_HEIGHT } =
     GRID_CONSTANTS;
@@ -63,24 +69,36 @@ export default function Grid({
   });
   const [selectedCol, setSelectedCol] = useState<string | null>(null);
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartCell = useRef<CellPosition | null>(null);
+
+  // Column/row order — arrays of indices (1-based)
+  const [colOrder, setColOrder] = useState<number[]>(() =>
+    Array.from({ length: TOTAL_COLS }, (_, i) => i + 1)
+  );
+  const [rowOrder, setRowOrder] = useState<number[]>(() =>
+    Array.from({ length: TOTAL_ROWS }, (_, i) => i + 1)
+  );
+
+  // Drag state
+  const [draggingCol, setDraggingCol] = useState<number | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<number | null>(null);
+  const [draggingRow, setDraggingRow] = useState<number | null>(null);
+  const [dragOverRow, setDragOverRow] = useState<number | null>(null);
+
+  const isDragging = useRef(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // ── Derived helpers ────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
   const getColWidth = useCallback(
-    (letter: string) =>
-      columnWidths[letter] ?? DEFAULT_COL_WIDTH,
+    (letter: string) => columnWidths[letter] ?? DEFAULT_COL_WIDTH,
     [columnWidths, DEFAULT_COL_WIDTH]
   );
 
   const getRowHeight = useCallback(
-    (row: number) =>
-      rowHeights[String(row)] ?? DEFAULT_ROW_HEIGHT,
+    (row: number) => rowHeights[String(row)] ?? DEFAULT_ROW_HEIGHT,
     [rowHeights, DEFAULT_ROW_HEIGHT]
   );
 
-  // ── Presence cell map — other users only ──────────────────────────────
   const presenceCellMap = useMemo(() => {
     const map: Record<CellId, (typeof presenceMap)[string]> = {};
     Object.values(presenceMap).forEach((p) => {
@@ -91,7 +109,6 @@ export default function Grid({
     return map;
   }, [presenceMap, ownUid]);
 
-  // ── Is cell in selection range ─────────────────────────────────────────
   const isInSelection = useCallback(
     (row: number, col: number): boolean => {
       const minR = Math.min(selection.start.row, selection.end.row);
@@ -103,34 +120,29 @@ export default function Grid({
     [selection]
   );
 
-  // ── Select a cell ─────────────────────────────────────────────────────
+  // ── Cell selection ────────────────────────────────────────────────────────
+
   const selectCell = useCallback(
     (cellId: CellId, extendSelection = false) => {
       const pos = parseCellId(cellId);
-
       if (extendSelection) {
         setSelection((prev) => ({ ...prev, end: pos }));
       } else {
         setSelection({ start: pos, end: pos });
       }
-
       setActiveCell(cellId);
       setSelectedCol(null);
       setSelectedRow(null);
       onActiveCellChange(cellId);
-
-      const raw = cells[cellId]?.raw ?? "";
-      onSelectionChange?.(cellId, raw);
+      onSelectionChange?.(cellId, cells[cellId]?.raw ?? "");
     },
     [cells, onActiveCellChange, onSelectionChange]
   );
 
-  // ── Navigate from active cell ──────────────────────────────────────────
   const navigate = useCallback(
     (direction: "up" | "down" | "left" | "right" | "tab" | "enter") => {
       const pos = parseCellId(activeCell);
       let { row, col } = pos;
-
       switch (direction) {
         case "up":    row = Math.max(1, row - 1); break;
         case "down":
@@ -139,32 +151,25 @@ export default function Grid({
         case "right":
         case "tab":   col = Math.min(TOTAL_COLS, col + 1); break;
       }
-
-      const newId = toCellId(row, col);
       setEditingCell(null);
-      selectCell(newId);
+      selectCell(toCellId(row, col));
     },
     [activeCell, TOTAL_ROWS, TOTAL_COLS, selectCell]
   );
 
-  // ── Handle cell select (mouse) ─────────────────────────────────────────
   const handleCellSelect = useCallback(
     (cellId: CellId, e: React.MouseEvent) => {
-      if (editingCell && editingCell !== cellId) {
-        setEditingCell(null);
-      }
+      if (editingCell && editingCell !== cellId) setEditingCell(null);
       selectCell(cellId, e.shiftKey);
     },
     [editingCell, selectCell]
   );
 
-  // ── Start editing ──────────────────────────────────────────────────────
   const handleStartEdit = useCallback((cellId: CellId) => {
     setEditingCell(cellId);
     setActiveCell(cellId);
   }, []);
 
-  // ── Commit edit ────────────────────────────────────────────────────────
   const handleCommitEdit = useCallback(
     (cellId: CellId, value: string) => {
       onCellChange(cellId, value);
@@ -173,18 +178,88 @@ export default function Grid({
     [onCellChange]
   );
 
-  // ── Cancel edit ────────────────────────────────────────────────────────
   const handleCancelEdit = useCallback((cellId: CellId) => {
     setEditingCell(null);
     selectCell(cellId);
   }, [selectCell]);
 
-  // ── Keyboard navigation on grid (not editing) ──────────────────────────
+  // ── Corner resize ─────────────────────────────────────────────────────────
+
+  const handleCornerResize = useCallback(
+    (cellId: CellId, dx: number, dy: number) => {
+      const pos = parseCellId(cellId);
+      const letter = colNumberToLetter(pos.col);
+      const currentW = columnWidths[letter] ?? DEFAULT_COL_WIDTH;
+      const currentH = rowHeights[String(pos.row)] ?? DEFAULT_ROW_HEIGHT;
+      if (Math.abs(dx) > 1) onColumnResize(letter, Math.max(40, currentW + dx));
+      if (Math.abs(dy) > 1) onRowResize(pos.row, Math.max(18, currentH + dy));
+    },
+    [columnWidths, rowHeights, DEFAULT_COL_WIDTH, DEFAULT_ROW_HEIGHT, onColumnResize, onRowResize]
+  );
+
+  // ── Column reorder ────────────────────────────────────────────────────────
+
+  const handleColDragStart = useCallback((colIndex: number) => {
+    setDraggingCol(colIndex);
+    isDragging.current = true;
+  }, []);
+
+  const handleColDragOver = useCallback((colIndex: number) => {
+    setDragOverCol(colIndex);
+  }, []);
+
+  const handleColDragEnd = useCallback(() => {
+    if (draggingCol !== null && dragOverCol !== null && draggingCol !== dragOverCol) {
+      setColOrder((prev) => {
+        const next = [...prev];
+        const fromIdx = next.indexOf(draggingCol);
+        const toIdx = next.indexOf(dragOverCol);
+        if (fromIdx === -1 || toIdx === -1) return prev;
+        next.splice(fromIdx, 1);
+        next.splice(toIdx, 0, draggingCol);
+        return next;
+      });
+      onColumnsReorder?.(draggingCol, dragOverCol);
+    }
+    setDraggingCol(null);
+    setDragOverCol(null);
+    isDragging.current = false;
+  }, [draggingCol, dragOverCol, onColumnsReorder]);
+
+  // ── Row reorder ───────────────────────────────────────────────────────────
+
+  const handleRowDragStart = useCallback((rowIndex: number) => {
+    setDraggingRow(rowIndex);
+    isDragging.current = true;
+  }, []);
+
+  const handleRowDragOver = useCallback((rowIndex: number) => {
+    setDragOverRow(rowIndex);
+  }, []);
+
+  const handleRowDragEnd = useCallback(() => {
+    if (draggingRow !== null && dragOverRow !== null && draggingRow !== dragOverRow) {
+      setRowOrder((prev) => {
+        const next = [...prev];
+        const fromIdx = next.indexOf(draggingRow);
+        const toIdx = next.indexOf(dragOverRow);
+        if (fromIdx === -1 || toIdx === -1) return prev;
+        next.splice(fromIdx, 1);
+        next.splice(toIdx, 0, draggingRow);
+        return next;
+      });
+      onRowsReorder?.(draggingRow, dragOverRow);
+    }
+    setDraggingRow(null);
+    setDragOverRow(null);
+    isDragging.current = false;
+  }, [draggingRow, dragOverRow, onRowsReorder]);
+
+  // ── Keyboard navigation ───────────────────────────────────────────────────
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (editingCell) return;
-
-      // Ignore if focus is inside an input/textarea elsewhere
       const tag = (e.target as HTMLElement).tagName.toLowerCase();
       if (tag === "input" || tag === "textarea") return;
 
@@ -193,31 +268,19 @@ export default function Grid({
       switch (e.key) {
         case "ArrowUp":
           e.preventDefault();
-          selectCell(
-            toCellId(Math.max(1, pos.row - 1), pos.col),
-            e.shiftKey
-          );
+          selectCell(toCellId(Math.max(1, pos.row - 1), pos.col), e.shiftKey);
           break;
         case "ArrowDown":
           e.preventDefault();
-          selectCell(
-            toCellId(Math.min(TOTAL_ROWS, pos.row + 1), pos.col),
-            e.shiftKey
-          );
+          selectCell(toCellId(Math.min(TOTAL_ROWS, pos.row + 1), pos.col), e.shiftKey);
           break;
         case "ArrowLeft":
           e.preventDefault();
-          selectCell(
-            toCellId(pos.row, Math.max(1, pos.col - 1)),
-            e.shiftKey
-          );
+          selectCell(toCellId(pos.row, Math.max(1, pos.col - 1)), e.shiftKey);
           break;
         case "ArrowRight":
           e.preventDefault();
-          selectCell(
-            toCellId(pos.row, Math.min(TOTAL_COLS, pos.col + 1)),
-            e.shiftKey
-          );
+          selectCell(toCellId(pos.row, Math.min(TOTAL_COLS, pos.col + 1)), e.shiftKey);
           break;
         case "Tab":
           e.preventDefault();
@@ -225,83 +288,34 @@ export default function Grid({
           break;
         case "Enter":
           e.preventDefault();
-          if (e.shiftKey) {
-            selectCell(toCellId(Math.max(1, pos.row - 1), pos.col));
-          } else {
-            navigate("enter");
-          }
+          e.shiftKey
+            ? selectCell(toCellId(Math.max(1, pos.row - 1), pos.col))
+            : navigate("enter");
           break;
         case "Escape":
           setEditingCell(null);
           break;
         case "Delete":
         case "Backspace":
-          if (cells[activeCell]?.raw) {
-            onCellChange(activeCell, "");
-          }
+          if (cells[activeCell]?.raw) onCellChange(activeCell, "");
           break;
         case "F2":
           e.preventDefault();
           handleStartEdit(activeCell);
           break;
         default:
-          // Start typing → enter edit mode
-          if (
-            e.key.length === 1 &&
-            !e.ctrlKey &&
-            !e.metaKey &&
-            !e.altKey
-          ) {
+          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
             handleStartEdit(activeCell);
           }
           break;
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    activeCell,
-    editingCell,
-    cells,
-    TOTAL_ROWS,
-    TOTAL_COLS,
-    selectCell,
-    navigate,
-    handleStartEdit,
-    onCellChange,
-  ]);
+  }, [activeCell, editingCell, cells, TOTAL_ROWS, TOTAL_COLS, selectCell, navigate, handleStartEdit, onCellChange]);
 
-  // ── Mouse drag selection ───────────────────────────────────────────────
-  const handleMouseDown = useCallback(
-    (cellId: CellId, e: React.MouseEvent) => {
-      if (e.button !== 0) return;
-      dragStartCell.current = parseCellId(cellId);
-      setIsDragging(true);
-    },
-    []
-  );
+  // ── Column / row select ───────────────────────────────────────────────────
 
-  const handleMouseEnter = useCallback(
-    (cellId: CellId) => {
-      if (!isDragging || !dragStartCell.current) return;
-      const pos = parseCellId(cellId);
-      setSelection({ start: dragStartCell.current, end: pos });
-      setActiveCell(toCellId(dragStartCell.current.row, dragStartCell.current.col));
-    },
-    [isDragging]
-  );
-
-  useEffect(() => {
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      dragStartCell.current = null;
-    };
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => window.removeEventListener("mouseup", handleMouseUp);
-  }, []);
-
-  // ── Column / row select ────────────────────────────────────────────────
   const handleSelectColumn = useCallback((letter: string) => {
     setSelectedCol(letter);
     setSelectedRow(null);
@@ -312,19 +326,16 @@ export default function Grid({
     setSelectedCol(null);
   }, []);
 
-  // ── Render ─────────────────────────────────────────────────────────────
-  const columns = useMemo(
-    () =>
-      Array.from({ length: TOTAL_COLS }, (_, i) =>
-        colNumberToLetter(i + 1)
-      ),
-    [TOTAL_COLS]
+  // ── Derived column/row arrays from order ──────────────────────────────────
+
+  const orderedColumns = useMemo(
+    () => colOrder.map((n) => colNumberToLetter(n)),
+    [colOrder]
   );
 
-  const rows = useMemo(
-    () => Array.from({ length: TOTAL_ROWS }, (_, i) => i + 1),
-    [TOTAL_ROWS]
-  );
+  const orderedRows = useMemo(() => rowOrder, [rowOrder]);
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div
@@ -332,62 +343,74 @@ export default function Grid({
       className="overflow-auto flex-1 relative"
       style={{ backgroundColor: "#0A0A0F" }}
     >
-      {/* Sticky top-left corner */}
-      <div className="sticky top-0 left-0 z-30 flex">
-        {/* Corner cell */}
+      {/* Sticky top row: corner + column headers */}
+      <div className="sticky top-0 z-30 flex">
+        {/* Corner */}
         <div
-          className="flex-shrink-0 bg-surface border-r border-b border-border sticky left-0 z-30"
+          className="flex-shrink-0 bg-surface border-r border-b border-border sticky left-0 z-30 flex items-center justify-center"
           style={{
             width: GRID_CONSTANTS.HEADER_COL_WIDTH,
             height: GRID_CONSTANTS.HEADER_ROW_HEIGHT,
           }}
         >
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="w-2 h-2 rounded-sm bg-border-bright" />
-          </div>
+          <div className="w-2 h-2 rounded-sm bg-border-bright" />
         </div>
 
         {/* Column headers */}
         <div className="flex sticky top-0 z-20">
-          {columns.map((letter) => (
-            <ColumnHeader
-              key={letter}
-              letter={letter}
-              width={getColWidth(letter)}
-              isSelected={selectedCol === letter}
-              onResize={onColumnResize}
-              onSelectColumn={handleSelectColumn}
-            />
-          ))}
+          {orderedColumns.map((letter, displayIdx) => {
+            const originalColNum = colLetterToNumber(letter);
+            return (
+              <ColumnHeader
+                key={letter}
+                letter={letter}
+                colIndex={originalColNum}
+                width={getColWidth(letter)}
+                isSelected={selectedCol === letter}
+                isDragging={draggingCol === originalColNum}
+                isDragOver={dragOverCol === originalColNum}
+                onResize={onColumnResize}
+                onSelectColumn={handleSelectColumn}
+                onDragStart={handleColDragStart}
+                onDragOver={handleColDragOver}
+                onDragEnd={handleColDragEnd}
+              />
+            );
+          })}
         </div>
       </div>
 
       {/* Grid body */}
       <div className="flex">
-        {/* Row headers — sticky left */}
+        {/* Row headers */}
         <div className="sticky left-0 z-10 flex flex-col flex-shrink-0">
-          {rows.map((row) => (
+          {orderedRows.map((rowNum) => (
             <RowHeader
-              key={row}
-              rowIndex={row}
-              height={getRowHeight(row)}
-              isSelected={selectedRow === row}
+              key={rowNum}
+              rowIndex={rowNum}
+              height={getRowHeight(rowNum)}
+              isSelected={selectedRow === rowNum}
+              isDragging={draggingRow === rowNum}
+              isDragOver={dragOverRow === rowNum}
               onResize={onRowResize}
               onSelectRow={handleSelectRow}
+              onDragStart={handleRowDragStart}
+              onDragOver={handleRowDragOver}
+              onDragEnd={handleRowDragEnd}
             />
           ))}
         </div>
 
         {/* Cells */}
         <div className="flex flex-col">
-          {rows.map((row) => (
-            <div key={row} className="flex flex-row">
-              {columns.map((letter, colIdx) => {
-                const col = colIdx + 1;
-                const cellId = toCellId(row, col);
+          {orderedRows.map((rowNum) => (
+            <div key={rowNum} className="flex flex-row">
+              {orderedColumns.map((letter, colIdx) => {
+                const col = colLetterToNumber(letter);
+                const cellId = toCellId(rowNum, col);
                 const isActive = activeCell === cellId;
                 const isEdit = editingCell === cellId;
-                const inSel = isInSelection(row, col);
+                const inSel = isInSelection(rowNum, col);
                 const presenceUser = presenceCellMap[cellId] ?? null;
 
                 return (
@@ -398,7 +421,7 @@ export default function Grid({
                     rawValue={cells[cellId]?.raw ?? ""}
                     format={cells[cellId]?.format ?? {}}
                     width={getColWidth(letter)}
-                    height={getRowHeight(row)}
+                    height={getRowHeight(rowNum)}
                     isSelected={isActive}
                     isEditing={isEdit}
                     isInSelection={inSel && !isActive}
@@ -408,6 +431,7 @@ export default function Grid({
                     onCommitEdit={handleCommitEdit}
                     onCancelEdit={handleCancelEdit}
                     onNavigate={navigate}
+                    onCornerResize={handleCornerResize}
                   />
                 );
               })}
