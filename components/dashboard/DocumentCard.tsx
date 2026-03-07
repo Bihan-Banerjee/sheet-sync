@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { SpreadsheetDocument } from "@/types";
 
 interface DocumentCardProps {
@@ -8,6 +8,7 @@ interface DocumentCardProps {
   isDeleting: boolean;
   onOpen: () => void;
   onDelete: () => void;
+  onRename: (newTitle: string) => void; // <-- New prop added
 }
 
 export default function DocumentCard({
@@ -15,25 +16,48 @@ export default function DocumentCard({
   isDeleting,
   onOpen,
   onDelete,
+  onRename,
 }: DocumentCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [editTitle, setEditTitle] = useState(document.title);
+  
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const lastModified = document.updatedAt
     ? formatRelativeTime(document.updatedAt.toDate())
     : "Just now";
 
+  // Focus the input automatically when rename is clicked
+  useEffect(() => {
+    if (isRenaming && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isRenaming]);
+
+  const handleRenameSubmit = () => {
+    setIsRenaming(false);
+    const trimmed = editTitle.trim();
+    if (trimmed && trimmed !== document.title) {
+      onRename(trimmed);
+    } else {
+      setEditTitle(document.title); // reset if empty or unchanged
+    }
+  };
+
   return (
     <div
-      className={`group relative rounded-2xl bg-surface border border-border shadow-sm hover:shadow-2xl hover:shadow-accent/5 hover:border-border-bright hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col overflow-visible ${
+      className={`group relative rounded-2xl bg-surface border border-border shadow-sm hover:shadow-2xl hover:shadow-accent/5 hover:border-border-bright hover:-translate-y-1.5 transition-all duration-300 flex flex-col overflow-visible ${
         isDeleting ? "opacity-50 pointer-events-none" : ""
       }`}
-      onClick={onOpen}
     >
-      {/* ── Preview Area (Realistic Mini Grid) ── */}
-      <div className="h-36 bg-surface-2 p-4 flex items-start justify-center border-b border-border relative overflow-hidden rounded-t-2xl">
+      {/* ── Preview Area ── */}
+      <div 
+        onClick={onOpen}
+        className="h-36 bg-surface-2 p-4 flex items-start justify-center border-b border-border relative overflow-hidden rounded-t-2xl cursor-pointer"
+      >
         <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
-        {/* The Mini Spreadsheet */}
         <div className="w-full h-full bg-surface rounded-md border border-border shadow-sm flex flex-col overflow-hidden relative z-10 group-hover:scale-[1.03] group-hover:-translate-y-1 transition-all duration-500 ease-out">
           <div className="h-4 bg-surface-3 flex border-b border-border">
             <div className="w-6 border-r border-border bg-surface-2" />
@@ -70,9 +94,32 @@ export default function DocumentCard({
       <div className="p-5 bg-surface rounded-b-2xl flex-1 flex flex-col justify-between z-20">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-text-primary truncate group-hover:text-accent transition-colors">
-              {document.title}
-            </h3>
+            
+            {/* INLINE RENAME INPUT OR TITLE */}
+            {isRenaming ? (
+              <input
+                ref={inputRef}
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onBlur={handleRenameSubmit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRenameSubmit();
+                  if (e.key === "Escape") {
+                    setIsRenaming(false);
+                    setEditTitle(document.title);
+                  }
+                }}
+                className="text-base font-semibold text-text-primary bg-surface-2 border border-accent rounded px-1 -ml-1 outline-none w-full shadow-inner"
+              />
+            ) : (
+              <h3 
+                onClick={onOpen}
+                className="text-base font-semibold text-text-primary truncate group-hover:text-accent transition-colors cursor-pointer"
+              >
+                {document.title}
+              </h3>
+            )}
+
             <p className="text-xs text-text-secondary mt-1.5 flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -81,7 +128,7 @@ export default function DocumentCard({
             </p>
           </div>
 
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
+          <div className="relative">
             <button
               onClick={() => setMenuOpen((v) => !v)}
               className="w-8 h-8 rounded-full flex items-center justify-center text-text-dim hover:text-text-primary hover:bg-surface-2 transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
@@ -102,6 +149,16 @@ export default function DocumentCard({
                     className="w-full px-4 py-2 text-left text-sm font-medium text-text-primary hover:bg-surface-2 transition-colors"
                   >
                     Open Sheet
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setIsRenaming(true);
+                      setEditTitle(document.title);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm font-medium text-text-primary hover:bg-surface-2 transition-colors"
+                  >
+                    Rename
                   </button>
                   <div className="h-px bg-border my-1 mx-2" />
                   <button

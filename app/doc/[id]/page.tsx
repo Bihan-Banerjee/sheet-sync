@@ -38,11 +38,16 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
     setColumnWidth,
     setRowHeight,
     getCellFormat,
+    updateTitle,
   } = useSpreadsheet(docId);
 
   const { presenceMap, otherUsers, updateActiveCell } = usePresence(docId, appUser);
 
   const [activeCellId, setActiveCellId] = useState<CellId | null>("A1");
+  
+  // State for inline title editing
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState("");
 
   const activeFormat = activeCellId ? getCellFormat(activeCellId) : {};
 
@@ -68,13 +73,12 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
     }
   }, [appUser, docMeta, docId]);
 
-
   // 3. EARLY RETURNS GO HERE (After all hooks have safely executed)
   if (loading) return null;
   if (!appUser) return <AuthModal />;
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
+    <div className="flex flex-col h-screen bg-background overflow-hidden relative">
       {/* Header */}
       <header className="h-14 border-b border-border bg-surface flex items-center justify-between px-4 flex-shrink-0">
         <div className="flex items-center gap-4">
@@ -85,20 +89,47 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
             &larr; Dashboard
           </button>
           <div className="w-px h-4 bg-border" />
-          <h1 className="font-medium text-text-primary truncate max-w-[200px] sm:max-w-xs">
-            {docMeta?.title || "Loading..."}
-          </h1>
+          
+          {/* Inline Title Editor */}
+          {isEditingTitle ? (
+            <input
+              autoFocus
+              value={titleInput}
+              onChange={(e) => setTitleInput(e.target.value)}
+              onBlur={() => {
+                setIsEditingTitle(false);
+                const trimmed = titleInput.trim();
+                if (trimmed && trimmed !== docMeta?.title) {
+                  updateTitle(trimmed);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setIsEditingTitle(false);
+                  const trimmed = titleInput.trim();
+                  if (trimmed && trimmed !== docMeta?.title) updateTitle(trimmed);
+                }
+                if (e.key === "Escape") {
+                  setIsEditingTitle(false);
+                }
+              }}
+              className="font-medium text-text-primary bg-surface-2 border border-accent rounded px-2 outline-none w-[200px] sm:w-[300px] h-7 shadow-inner"
+            />
+          ) : (
+            <h1
+              onClick={() => {
+                setTitleInput(docMeta?.title || "");
+                setIsEditingTitle(true);
+              }}
+              className="font-medium text-text-primary truncate max-w-[200px] sm:max-w-xs cursor-text hover:bg-surface-2 px-2 py-0.5 -ml-2 rounded transition-colors border border-transparent hover:border-border"
+              title="Click to rename"
+            >
+              {docMeta?.title || "Loading..."}
+            </h1>
+          )}
+
           <SyncIndicator state={writeState} />
         </div>
-
-        {/* Active cell address pill */}
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-2 border border-border flex-shrink-0">
-          <span className="text-[10px] font-mono text-text-dim">cell</span>
-          <span className="text-xs font-mono font-medium text-accent">
-            {activeCellId}
-          </span>
-        </div>
-        <div className="w-px h-4 bg-border flex-shrink-0" />
 
         <div className="flex items-center gap-3">
           {/* Active Collaborators */}
@@ -145,6 +176,21 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
         onRowResize={setRowHeight}
         onActiveCellChange={handleActiveCellChange}
       />
+
+      {/* ── Floating Active Cell Indicator ── */}
+      <div className="fixed bottom-6 right-8 z-50 flex items-center gap-2.5 px-4 py-2 rounded-xl bg-surface/90 backdrop-blur-md border border-border shadow-2xl transition-all duration-200 hover:scale-105 select-none">
+        <div className="relative flex items-center justify-center w-2 h-2">
+          <div className="absolute w-full h-full rounded-full bg-accent opacity-40 animate-ping" />
+          <div className="w-2 h-2 rounded-full bg-accent" />
+        </div>
+        <span className="text-[11px] font-semibold text-text-dim uppercase tracking-wider">
+          Current Cell
+        </span>
+        <div className="h-4 w-px bg-border mx-1" />
+        <span className="text-sm font-mono font-bold text-accent min-w-[28px] text-center">
+          {activeCellId || "—"}
+        </span>
+      </div>
     </div>
   );
 }

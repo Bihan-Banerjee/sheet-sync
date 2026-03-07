@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { collection, query, where, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, addDoc, deleteDoc, updateDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAppUser } from "@/hooks/useAuth";
 import { useToast } from "@/context/ToastContext";
@@ -37,6 +37,18 @@ export default function DashboardPage() {
     });
     return () => unsub();
   }, [appUser]);
+
+  const handleRename = useCallback(async (docId: string, newTitle: string) => {
+    try {
+      await updateDoc(doc(db, "documents", docId), {
+        title: newTitle,
+        updatedAt: serverTimestamp(),
+      });
+      addToast("Document renamed", "success");
+    } catch {
+      addToast("Failed to rename document", "error");
+    }
+  }, [addToast]);
 
   const handleCreate = useCallback(async (title: string) => {
     if (!appUser) return;
@@ -165,6 +177,7 @@ export default function DashboardPage() {
                     isDeleting={deletingId === doc.id}
                     onOpen={() => router.push(`/doc/${doc.id}`)}
                     onDelete={() => handleDelete(doc.id)}
+                    onRename={(newTitle) => handleRename(doc.id, newTitle)}
                   />
                 </div>
               ))}
