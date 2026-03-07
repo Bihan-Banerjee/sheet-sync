@@ -4,7 +4,7 @@ import { useState, useCallback, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-
+import Loader from "@/components/ui/Loader";
 import Grid from "@/components/grid/Grid";
 import FormattingToolbar from "@/components/editor/FormattingToolbar";
 import ExportMenu from "@/components/editor/ExportMenu";
@@ -74,8 +74,15 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
   }, [appUser, docMeta, docId]);
 
   // 3. EARLY RETURNS GO HERE (After all hooks have safely executed)
-  if (loading) return null;
+  
+  // Wait for Firebase Auth to initialize
+  if (loading) return <Loader fullScreen text="Authenticating..." />;
+  
+  // Block unauthenticated users
   if (!appUser) return <AuthModal />;
+  
+  // Wait for the document data to be pulled from Firestore
+  if (!docMeta) return <Loader fullScreen text="Opening Spreadsheet..." />;
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden relative">

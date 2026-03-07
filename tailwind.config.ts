@@ -50,14 +50,21 @@ const config: Config = {
         pulseGlow: {
           "0%, 100%": { opacity: "0.5" },
           "50%": { opacity: "0.8" },
-        }
+        },
+        // Added shimmer keyframe
+        shimmer: {
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         fadeUp: "fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         pulseGlow: "pulseGlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        // Added shimmer animation
+        shimmer: "shimmer 1.5s infinite",
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
 };
+
 export default config;
