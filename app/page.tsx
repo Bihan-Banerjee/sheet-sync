@@ -2,17 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  addDoc,
-  deleteDoc,
-  doc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAppUser } from "@/hooks/useAuth";
 import { useToast } from "@/context/ToastContext";
@@ -22,10 +12,10 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import type { SpreadsheetDocument } from "@/types";
 
 const TEMPLATES = [
-  { label: "Blank Spreadsheet", icon: "⬜", color: "bg-accent", desc: "Start from scratch" },
-  { label: "Monthly Budget", icon: "💰", color: "bg-success", desc: "Track your expenses" },
-  { label: "Project Tracker", icon: "📊", color: "bg-warning", desc: "Manage your tasks" },
-  { label: "Habit Planner", icon: "📅", color: "bg-error", desc: "Build good routines" },
+  { label: "Blank Spreadsheet", icon: "✨", color: "text-accent", bg: "bg-accent/10" },
+  { label: "Monthly Budget", icon: "💰", color: "text-success", bg: "bg-success/10" },
+  { label: "Project Tracker", icon: "📊", color: "text-warning", bg: "bg-warning/10" },
+  { label: "Habit Planner", icon: "📅", color: "text-error", bg: "bg-error/10" },
 ] as const;
 
 export default function DashboardPage() {
@@ -40,14 +30,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!appUser) return;
-    const q = query(
-      collection(db, "documents"),
-      where("ownerId", "==", appUser.uid),
-      orderBy("updatedAt", "desc")
-    );
+    const q = query(collection(db, "documents"), where("ownerId", "==", appUser.uid), orderBy("updatedAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
-      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as SpreadsheetDocument[];
-      setDocuments(docs);
+      setDocuments(snap.docs.map((d) => ({ id: d.id, ...d.data() })) as SpreadsheetDocument[]);
       setDocsLoading(false);
     });
     return () => unsub();
@@ -58,13 +43,7 @@ export default function DashboardPage() {
     setCreating(true);
     try {
       const docRef = await addDoc(collection(db, "documents"), {
-        title: title,
-        ownerId: appUser.uid,
-        ownerName: appUser.displayName,
-        columnWidths: {},
-        rowHeights: {},
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        title, ownerId: appUser.uid, ownerName: appUser.displayName, columnWidths: {}, rowHeights: {}, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
       });
       addToast(`Created "${title}"`, "success");
       router.push(`/doc/${docRef.id}`);
@@ -90,38 +69,36 @@ export default function DashboardPage() {
   if (!appUser) return <AuthModal />;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col font-sans">
-      {/* ── Top Navigation ── */}
-      <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md shadow-sm">
+    <div className="min-h-screen relative font-sans text-text-primary overflow-x-hidden selection:bg-accent/30">
+      {/* Premium Ambient Background Glow */}
+      <div className="fixed inset-0 z-[-1] bg-background">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-accent/10 blur-[100px] animate-pulseGlow" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] rounded-full bg-accent/5 blur-[100px]" />
+      </div>
+
+      {/* Glassmorphism Header */}
+      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/60 backdrop-blur-xl transition-all">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shadow-md shadow-accent/20">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={1.5}>
-                <rect x="1" y="1" width="6" height="6" rx="1" />
-                <rect x="9" y="1" width="6" height="6" rx="1" />
-                <rect x="1" y="9" width="6" height="6" rx="1" />
-                <rect x="9" y="9" width="6" height="6" rx="1" />
+          <div className="flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="w-8 h-8 rounded-xl bg-accent flex items-center justify-center shadow-lg shadow-accent/20">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 16 16" stroke="currentColor" strokeWidth={2}>
+                <rect x="2" y="2" width="5" height="5" rx="1" />
+                <rect x="9" y="2" width="5" height="5" rx="1" />
+                <rect x="2" y="9" width="5" height="5" rx="1" />
+                <rect x="9" y="9" width="5" height="5" rx="1" />
               </svg>
             </div>
-            <span className="font-mono text-lg font-semibold text-text-primary tracking-tight">
-              SheetSync
-            </span>
+            <span className="font-mono text-lg font-bold tracking-tight">SheetSync</span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
             <ThemeToggle />
             <div className="w-px h-6 bg-border" />
             <div className="flex items-center gap-3">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ring-2 ring-surface"
-                style={{ backgroundColor: appUser.presenceColor }}
-              >
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shadow-sm ring-2 ring-background" style={{ backgroundColor: appUser.presenceColor }}>
                 {appUser.displayName.charAt(0).toUpperCase()}
               </div>
-              <button
-                onClick={() => { signOut(); addToast("Signed out", "info"); }}
-                className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-              >
+              <button onClick={() => { signOut(); addToast("Signed out", "info"); }} className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors">
                 Log out
               </button>
             </div>
@@ -129,45 +106,40 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* ── Main Content ── */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-10 space-y-12">
+      <main className="max-w-7xl w-full mx-auto px-6 py-12 space-y-16">
         
         {/* Hero Section */}
-        <section className="space-y-6" style={{ animation: "fadeUp 0.4s ease forwards" }}>
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight">
-              Welcome back, {appUser.displayName.split(" ")[0]}
+        <section className="space-y-8 animate-fadeUp">
+          <div className="space-y-2">
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-accent-hover">{appUser.displayName.split(" ")[0]}</span>
             </h1>
-            <p className="text-text-secondary mt-2 text-lg">
-              What are we working on today?
-            </p>
+            <p className="text-text-secondary text-lg font-medium">Create a new spreadsheet or continue where you left off.</p>
           </div>
 
-          {/* Templates Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {TEMPLATES.map((t, i) => (
               <button
                 key={t.label}
                 onClick={() => handleCreate(t.label === "Blank Spreadsheet" ? "Untitled Spreadsheet" : t.label)}
                 disabled={creating}
-                className="group relative flex flex-col items-start p-5 rounded-2xl border border-border bg-surface hover:border-accent hover:shadow-lg transition-all duration-300 disabled:opacity-50 text-left overflow-hidden"
-                style={{ animation: `fadeUp 0.4s ease forwards ${i * 0.1}s`, opacity: 0 }}
+                className="group relative p-6 rounded-2xl border border-border bg-surface hover:border-accent/50 shadow-sm hover:shadow-xl hover:shadow-accent/5 transition-all duration-300 disabled:opacity-50 text-left overflow-hidden flex flex-col justify-between min-h-[140px]"
+                style={{ animationDelay: `${i * 100}ms` }}
               >
-                <div className={`w-10 h-10 rounded-xl ${t.color} flex items-center justify-center text-lg mb-4 shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                <div className={`w-12 h-12 rounded-xl ${t.bg} ${t.color} flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300`}>
                   {t.icon}
                 </div>
-                <h3 className="font-semibold text-text-primary">{t.label}</h3>
-                <p className="text-xs text-text-secondary mt-1">{t.desc}</p>
+                <h3 className="font-semibold text-text-primary text-base">{t.label}</h3>
               </button>
             ))}
           </div>
         </section>
 
-        {/* Documents Section */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between border-b border-border pb-4">
-            <h2 className="text-xl font-semibold text-text-primary">Recent Documents</h2>
-            <span className="text-sm text-text-dim bg-surface-2 px-3 py-1 rounded-full font-mono">
+        {/* Documents Grid */}
+        <section className="space-y-6 animate-fadeUp" style={{ animationDelay: "200ms" }}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold">Recent Files</h2>
+            <span className="text-sm text-text-dim bg-surface px-3 py-1 rounded-full font-mono border border-border">
               {documents.length} File{documents.length !== 1 && 's'}
             </span>
           </div>
@@ -175,19 +147,19 @@ export default function DashboardPage() {
           {docsLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-48 rounded-2xl bg-surface-2 animate-pulse border border-border" />
+                <div key={i} className="h-[220px] rounded-2xl bg-surface animate-pulse border border-border" />
               ))}
             </div>
           ) : documents.length === 0 ? (
-            <div className="text-center py-20 bg-surface border border-border rounded-3xl border-dashed">
-              <div className="text-4xl mb-4">📂</div>
-              <h3 className="text-lg font-medium text-text-primary">No documents yet</h3>
+            <div className="text-center py-24 bg-surface/50 border border-border rounded-3xl border-dashed backdrop-blur-sm">
+              <div className="text-5xl mb-4 opacity-50">📂</div>
+              <h3 className="text-lg font-semibold">No documents yet</h3>
               <p className="text-sm text-text-secondary mt-1">Select a template above to get started.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {documents.map((doc, i) => (
-                <div key={doc.id} style={{ animation: `fadeUp 0.4s ease forwards ${i * 0.05}s`, opacity: 0 }}>
+                <div key={doc.id} className="animate-fadeUp" style={{ animationDelay: `${(i % 4) * 100 + 300}ms` }}>
                   <DocumentCard
                     document={doc}
                     isDeleting={deletingId === doc.id}
@@ -207,7 +179,7 @@ export default function DashboardPage() {
 function FullScreenLoader() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-surface-3 border-t-accent rounded-full animate-spin" />
+      <div className="w-10 h-10 border-4 border-surface-3 border-t-accent rounded-full animate-spin shadow-lg shadow-accent/20" />
     </div>
   );
 }

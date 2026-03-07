@@ -24,45 +24,39 @@ export default function DocumentCard({
 
   return (
     <div
-      className={`group relative rounded-2xl bg-surface border border-border shadow-sm hover:shadow-xl hover:border-border-bright hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col ${
+      className={`group relative rounded-2xl bg-surface border border-border shadow-sm hover:shadow-2xl hover:shadow-accent/5 hover:border-border-bright hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col overflow-visible ${
         isDeleting ? "opacity-50 pointer-events-none" : ""
       }`}
       onClick={onOpen}
     >
       {/* ── Preview Area (Realistic Mini Grid) ── */}
-      <div className="h-32 bg-surface-2 p-3 flex items-start justify-center border-b border-border relative overflow-hidden">
-        {/* Accent glow on hover */}
+      <div className="h-36 bg-surface-2 p-4 flex items-start justify-center border-b border-border relative overflow-hidden rounded-t-2xl">
         <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         
         {/* The Mini Spreadsheet */}
-        <div className="w-full h-full bg-surface rounded-md border border-border shadow-sm flex flex-col overflow-hidden relative z-10">
-          {/* Header Row */}
+        <div className="w-full h-full bg-surface rounded-md border border-border shadow-sm flex flex-col overflow-hidden relative z-10 group-hover:scale-[1.03] group-hover:-translate-y-1 transition-all duration-500 ease-out">
           <div className="h-4 bg-surface-3 flex border-b border-border">
             <div className="w-6 border-r border-border bg-surface-2" />
             <div className="flex-1 border-r border-border" />
             <div className="flex-1 border-r border-border" />
             <div className="flex-1" />
           </div>
-          {/* Grid Body */}
           <div className="flex-1 flex flex-col">
-            {/* Row 1 with an "active" cell */}
             <div className="h-5 flex border-b border-border">
               <div className="w-6 border-r border-border bg-surface-3" />
               <div className="flex-1 border-r border-border bg-surface" />
               <div className="flex-1 border-r border-accent bg-accent/10 relative">
-                <div className="absolute inset-0 border-2 border-accent" />
+                <div className="absolute inset-0 border-2 border-accent/80" />
               </div>
               <div className="flex-1 bg-surface" />
             </div>
-            {/* Row 2 */}
             <div className="h-5 flex border-b border-border">
               <div className="w-6 border-r border-border bg-surface-3" />
               <div className="flex-1 border-r border-border bg-surface" />
               <div className="flex-1 border-r border-border bg-surface" />
               <div className="flex-1 bg-surface" />
             </div>
-             {/* Row 3 */}
-             <div className="h-5 flex">
+            <div className="h-5 flex">
               <div className="w-6 border-r border-border bg-surface-3" />
               <div className="flex-1 border-r border-border bg-surface" />
               <div className="flex-1 border-r border-border bg-surface" />
@@ -73,21 +67,20 @@ export default function DocumentCard({
       </div>
 
       {/* ── Card Info Body ── */}
-      <div className="p-4 bg-surface flex-1 flex flex-col justify-between">
+      <div className="p-5 bg-surface rounded-b-2xl flex-1 flex flex-col justify-between z-20">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-text-primary truncate">
+            <h3 className="text-base font-semibold text-text-primary truncate group-hover:text-accent transition-colors">
               {document.title}
             </h3>
-            <p className="text-xs text-text-secondary mt-1 flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <p className="text-xs text-text-secondary mt-1.5 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {lastModified}
             </p>
           </div>
 
-          {/* Context Menu Button */}
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setMenuOpen((v) => !v)}
@@ -102,20 +95,20 @@ export default function DocumentCard({
 
             {menuOpen && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-10 z-20 w-36 rounded-xl border border-border bg-surface shadow-xl overflow-hidden py-1 transform origin-top-right transition-all">
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-10 z-50 w-40 rounded-xl border border-border bg-surface shadow-2xl overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-150">
                   <button
                     onClick={() => { setMenuOpen(false); onOpen(); }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-surface-2 transition-colors flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-sm font-medium text-text-primary hover:bg-surface-2 transition-colors"
                   >
-                    Open
+                    Open Sheet
                   </button>
                   <div className="h-px bg-border my-1 mx-2" />
                   <button
                     onClick={() => { setMenuOpen(false); onDelete(); }}
-                    className="w-full px-4 py-2 text-left text-sm text-error hover:bg-error/10 transition-colors flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-sm font-medium text-error hover:bg-error/10 transition-colors"
                   >
-                    Delete
+                    Delete File
                   </button>
                 </div>
               </>
@@ -124,8 +117,8 @@ export default function DocumentCard({
         </div>
 
         {/* Owner Tag */}
-        <div className="mt-4 flex items-center gap-2 pt-3 border-t border-border">
-          <div className="w-5 h-5 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
+        <div className="mt-5 flex items-center gap-2 pt-4 border-t border-border/60">
+          <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center border border-accent/20">
             <span className="text-[10px] text-accent font-bold">
               {document.ownerName?.charAt(0).toUpperCase() ?? "?"}
             </span>
@@ -139,8 +132,6 @@ export default function DocumentCard({
   );
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 function formatRelativeTime(date: Date): string {
   const diff = Date.now() - date.getTime();
   const mins = Math.floor(diff / 60_000);
@@ -150,5 +141,5 @@ function formatRelativeTime(date: Date): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }

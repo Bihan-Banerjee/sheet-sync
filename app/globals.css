@@ -6,89 +6,47 @@
 
 @layer base {
   :root {
-    /* Shadcn HSL Base (Light Mode) */
-    --background: 0 0% 98%;      
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
-    --radius: 0.5rem;
-
-    /* Spreadsheet Custom Theme (Light Mode) */
-    --surface: #FFFFFF;
-    --surface-2: #F4F4F5;
-    --surface-3: #E4E4E7;
-    --text-primary: #18181B;
-    --text-secondary: #52525B;
-    --text-dim: #A1A1AA;
-    --border-bright: #D4D4D8;
-    --accent: #6366F1;
-    --accent-hover: #4F46E5;
-    --accent-dim: #E0E7FF;
-    --success: #22C55E;
-    --warning: #F59E0B;
-    --error: #EF4444;
+    /* LIGHT MODE */
+    --background: 240 5% 98%;      /* #FAFAFA */
+    --surface: 0 0% 100%;          /* #FFFFFF */
+    --surface-2: 240 5% 96%;       /* #F4F4F5 */
+    --surface-3: 240 5% 90%;       /* #E4E4E7 */
+    --text-primary: 240 10% 4%;    /* #0A0A0A */
+    --text-secondary: 240 5% 40%;  /* #666666 */
+    --text-dim: 240 5% 65%;        /* #A6A6A6 */
+    --border: 240 6% 90%;          /* #E5E5E6 */
+    --border-bright: 240 6% 80%;   /* #CCCCCC */
+    --accent: 234 89% 67%;         /* #6366F1 */
+    --accent-hover: 234 89% 55%;   /* #4F46E5 */
+    --accent-dim: 234 89% 95%;     /* #E0E7FF */
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --error: 348 83% 47%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    /* Shadcn HSL Base (Dark Mode) */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-
-    /* Spreadsheet Custom Theme (Dark Mode) */
-    --surface: #111118;
-    --surface-2: #1A1A24;
-    --surface-3: #2A2A3A;
-    --text-primary: #F1F1F5;
-    --text-secondary: #AAAAA0;
-    --text-dim: #8B8BA7;
-    --border-bright: #3A3A50;
-    --accent: #6366F1;
-    --accent-hover: #818CF8;
-    --accent-dim: rgba(99, 102, 241, 0.15); 
-    --success: #22C55E;
-    --warning: #F59E0B;
-    --error: #EF4444;
+    /* DARK MODE */
+    --background: 240 10% 4%;      /* Ultra dark zinc background */
+    --surface: 240 6% 10%;         /* Elevated zinc card surface (Stops blending) */
+    --surface-2: 240 6% 15%;       /* Inner card backgrounds */
+    --surface-3: 240 5% 26%;       
+    --text-primary: 0 0% 98%;      
+    --text-secondary: 240 5% 70%;  
+    --text-dim: 240 5% 45%;        
+    --border: 240 6% 18%;          /* Distinct card border */
+    --border-bright: 240 6% 28%;   
+    --accent: 234 89% 67%;         
+    --accent-hover: 234 89% 75%;   
+    --accent-dim: 234 89% 15%;     
   }
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html,
-body {
+html, body {
   background-color: hsl(var(--background));
-  color: var(--text-primary);
+  color: hsl(var(--text-primary));
   font-family: "Sora", system-ui, sans-serif;
   margin: 0;
   padding: 0;
@@ -96,97 +54,57 @@ body {
 }
 
 /* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--surface);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--surface-3);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-bright);
-}
-::-webkit-scrollbar-corner {
-  background: var(--surface);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--surface-3)); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--text-dim)); }
+::-webkit-scrollbar-corner { background: transparent; }
 
-/* Cell selection */
+/* Grid specific overrides */
 .cell-selected {
-  box-shadow: 0 0 0 2px var(--accent) inset;
-  background-color: var(--accent-dim);
+  box-shadow: 0 0 0 2px hsl(var(--accent)) inset;
+  background-color: hsl(var(--accent-dim));
 }
-
 .cell-editing {
-  box-shadow: 0 0 0 2px var(--accent) inset, 0 0 0 4px var(--accent-dim);
-  background-color: var(--surface);
+  box-shadow: 0 0 0 2px hsl(var(--accent)) inset, 0 0 0 4px hsl(var(--accent-dim));
+  background-color: hsl(var(--surface));
   z-index: 10;
 }
-
-/* Presence colored borders on cells */
 .cell-presence {
   box-shadow: 0 0 0 2px var(--presence-color) inset;
 }
-
-/* Stagger animation utility */
-.stagger-children > *:nth-child(1)  { animation-delay: 0.05s; }
-.stagger-children > *:nth-child(2)  { animation-delay: 0.10s; }
-.stagger-children > *:nth-child(3)  { animation-delay: 0.15s; }
-.stagger-children > *:nth-child(4)  { animation-delay: 0.20s; }
-.stagger-children > *:nth-child(5)  { animation-delay: 0.25s; }
-.stagger-children > *:nth-child(6)  { animation-delay: 0.30s; }
-.stagger-children > *:nth-child(7)  { animation-delay: 0.35s; }
-.stagger-children > *:nth-child(8)  { animation-delay: 0.40s; }
-
-/* Grid cell base */
 .grid-cell {
   font-family: "DM Mono", monospace;
   font-size: 13px;
   padding: 0 6px;
-  border-right: 1px solid var(--border-bright);
-  border-bottom: 1px solid var(--border-bright);
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: cell;
   position: relative;
   background: hsl(var(--background));
-  color: var(--text-primary);
+  color: hsl(var(--text-primary));
   outline: none;
   display: flex;
   align-items: center;
   min-height: 24px;
-  transition: background 0.1s;
+  transition: background 0.1s ease;
 }
-
 .grid-cell:hover:not(.cell-selected):not(.cell-editing) {
-  background: var(--surface);
+  background: hsl(var(--surface));
 }
-
-/* Formula bar */
 .formula-bar {
   font-family: "DM Mono", monospace;
   font-size: 13px;
-  background: var(--surface);
-  border: 1px solid var(--border-bright);
-  color: var(--text-primary);
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border));
+  color: hsl(var(--text-primary));
   outline: none;
-  transition: border-color 0.15s;
+  transition: all 0.2s ease;
 }
-
 .formula-bar:focus {
-  border-color: var(--accent);
-}
-
-/* Toast */
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(8px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.toast {
-  animation: toastIn 0.2s ease forwards;
+  border-color: hsl(var(--accent));
+  box-shadow: 0 0 0 3px hsl(var(--accent-dim));
 }
