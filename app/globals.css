@@ -27,14 +27,14 @@
 
   .dark {
     /* DARK MODE */
-    --background: 240 10% 4%;      /* Ultra dark zinc background */
-    --surface: 240 6% 10%;         /* Elevated zinc card surface (Stops blending) */
-    --surface-2: 240 6% 15%;       /* Inner card backgrounds */
+    --background: 240 10% 4%;      
+    --surface: 240 6% 10%;         
+    --surface-2: 240 6% 15%;      
     --surface-3: 240 5% 26%;       
     --text-primary: 0 0% 98%;      
     --text-secondary: 240 5% 70%;  
     --text-dim: 240 5% 45%;        
-    --border: 240 6% 18%;          /* Distinct card border */
+    --border: 240 6% 18%;        
     --border-bright: 240 6% 28%;   
     --accent: 234 89% 67%;         
     --accent-hover: 234 89% 75%;   

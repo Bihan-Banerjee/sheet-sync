@@ -5,7 +5,7 @@ import { GRID_CONSTANTS } from "@/types";
 
 interface ColumnHeaderProps {
   letter: string;
-  colIndex: number;       // 1-based
+  colIndex: number;       
   width: number;
   isSelected: boolean;
   isDragOver: boolean;
@@ -62,7 +62,6 @@ const ColumnHeader = memo(function ColumnHeader({
     [letter, width, onResize]
   );
 
-  // Reorder drag handlers
   const handleDragStart = useCallback(
     (e: React.DragEvent) => {
       e.dataTransfer.effectAllowed = "move";
@@ -94,7 +93,6 @@ const ColumnHeader = memo(function ColumnHeader({
         minWidth: width,
         maxWidth: width,
         height: GRID_CONSTANTS.HEADER_ROW_HEIGHT,
-        // Using Tailwind HSL variables for dynamic Light/Dark mode!
         backgroundColor: isDragOver
           ? "hsl(var(--accent) / 0.3)"
           : isDragging

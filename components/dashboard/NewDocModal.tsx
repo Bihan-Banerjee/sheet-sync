@@ -27,7 +27,6 @@ export default function NewDocModal({
     setTimeout(() => inputRef.current?.focus(), 80);
   }, []);
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();

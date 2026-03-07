@@ -6,21 +6,16 @@ export default function ShareButton() {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async (e: React.MouseEvent) => {
-    // 1. Force the browser to prioritize this click above everything else
     e.preventDefault();
     e.stopPropagation();
-    
-    // 2. Immediate Native Feedback
     console.log("PURE Share Button clicked!");
 
     const url = window.location.href;
 
     try {
-      // 3. Try to copy using the standard API
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(url);
       } else {
-        // Fallback for local environments
         const textArea = document.createElement("textarea");
         textArea.value = url;
         textArea.style.position = "fixed";
@@ -54,7 +49,6 @@ export default function ShareButton() {
     >
       {copied ? (
         <>
-          {/* pointer-events-none ensures the SVG doesn't block the button click */}
           <svg className="w-4 h-4 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>

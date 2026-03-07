@@ -47,8 +47,6 @@ export function useToast() {
   return ctx;
 }
 
-// ─── Toast UI ─────────────────────────────────────────────────────────────────
-
 function ToastContainer({
   toasts,
   removeToast,

@@ -4,10 +4,6 @@ import { useMemo } from "react";
 import { useAuth as useAuthContext } from "@/context/AuthContext";
 import type { AppUser } from "@/types";
 
-/**
- * Thin wrapper over AuthContext that returns a typed AppUser object
- * alongside the raw auth actions. Use this hook in all components.
- */
 export function useAppUser(): {
   appUser: AppUser | null;
   loading: boolean;

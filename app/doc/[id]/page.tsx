@@ -12,7 +12,6 @@ import SyncIndicator from "@/components/editor/SyncIndicator";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import ShareButton from "@/components/editor/ShareButton";
 import AuthModal from "@/components/auth/AuthModal";
-
 import { useSpreadsheet } from "@/hooks/useSpreadsheet";
 import { usePresence } from "@/hooks/usePresence";
 import { useAppUser } from "@/hooks/useAuth";
@@ -21,12 +20,8 @@ import type { CellId, CellFormat } from "@/types";
 export default function DocumentPage(props: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { appUser, loading } = useAppUser();
-  
-  // 1. Unwrap params FIRST
   const params = use(props.params);
   const docId = params.id;
-
-  // 2. Call ALL Hooks unconditionally before any early returns
   const {
     cells,
     docMeta,
@@ -39,18 +34,14 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
     setRowHeight,
     getCellFormat,
     updateTitle,
+    undo, 
   } = useSpreadsheet(docId);
 
   const { presenceMap, otherUsers, updateActiveCell } = usePresence(docId, appUser);
-
   const [activeCellId, setActiveCellId] = useState<CellId | null>("A1");
-  
-  // State for inline title editing
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState("");
-
   const activeFormat = activeCellId ? getCellFormat(activeCellId) : {};
-
   const handleActiveCellChange = useCallback((cellId: CellId | null) => {
     setActiveCellId(cellId);
     updateActiveCell(cellId);
@@ -64,7 +55,6 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
     if (appUser) setCellRaw(cellId, raw, appUser.uid);
   }, [appUser, setCellRaw]);
 
-  // Track access for shared users
   useEffect(() => {
     if (appUser && docMeta && (!docMeta.accessedBy || !docMeta.accessedBy.includes(appUser.uid))) {
       updateDoc(doc(db, "documents", docId), {
@@ -73,15 +63,10 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
     }
   }, [appUser, docMeta, docId]);
 
-  // 3. EARLY RETURNS GO HERE (After all hooks have safely executed)
-  
-  // Wait for Firebase Auth to initialize
   if (loading) return <Loader fullScreen text="Authenticating..." />;
   
-  // Block unauthenticated users
   if (!appUser) return <AuthModal />;
   
-  // Wait for the document data to be pulled from Firestore
   if (!docMeta) return <Loader fullScreen text="Opening Spreadsheet..." />;
 
   return (
@@ -182,6 +167,7 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
         onColumnResize={setColumnWidth}
         onRowResize={setRowHeight}
         onActiveCellChange={handleActiveCellChange}
+        onUndo={undo} 
       />
 
       {/* ── Floating Active Cell Indicator ── */}

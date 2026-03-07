@@ -12,8 +12,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import type { SpreadsheetDocument } from "@/types";
 import Loader from "@/components/ui/Loader";
 import { TEMPLATE_REGISTRY } from "@/lib/templates";
-
-// Professional SVG Icons instead of Emojis
 import { FileSpreadsheet, PieChart, KanbanSquare, CalendarDays, Plus, Search, FileText } from "lucide-react";
 
 const TEMPLATES = [
@@ -27,13 +25,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const { appUser, loading, signOut } = useAppUser();
   const { addToast } = useToast();
-
   const [documents, setDocuments] = useState<SpreadsheetDocument[]>([]);
   const [docsLoading, setDocsLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  // Time-aware greeting
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return "Good morning";
@@ -72,16 +67,10 @@ export default function DashboardPage() {
     setCreating(true);
     
     try {
-      // 1. Initialize a Batch
       const batch = writeBatch(db);
-      
-      // 2. Generate a new document reference explicitly
       const docRef = doc(collection(db, "documents"));
-      
-      // 3. Check if the user selected a known template
       const templateData = TEMPLATE_REGISTRY[title];
 
-      // 4. Create the main document
       batch.set(docRef, {
         title, 
         ownerId: appUser.uid, 
@@ -93,13 +82,12 @@ export default function DashboardPage() {
         updatedAt: serverTimestamp(),
       });
 
-      // 5. If it's a template, populate the cells subcollection
       if (templateData) {
         Object.entries(templateData.cells).forEach(([cellId, cellData]) => {
           const cellRef = doc(db, "documents", docRef.id, "cells", cellId);
           batch.set(cellRef, {
             raw: cellData.raw,
-            computed: "", // The spreadsheet's formula parser will handle this on load
+            computed: "",
             format: cellData.format || {},
             lastEditedBy: appUser.uid,
             updatedAt: serverTimestamp(),
@@ -107,7 +95,6 @@ export default function DashboardPage() {
         });
       }
 
-      // 6. Commit the entire batch to Firebase simultaneously
       await batch.commit();
 
       addToast(`Created "${title}"`, "success");
@@ -248,14 +235,12 @@ export default function DashboardPage() {
           </div>
 
           {docsLoading ? (
-            // Premium Skeleton Loader
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="h-[240px] rounded-2xl bg-surface/40 animate-pulse border border-border shadow-sm" />
               ))}
             </div>
           ) : documents.length === 0 ? (
-            // Pro Empty State (Dropzone style)
             <div className="relative group overflow-hidden w-full rounded-3xl border border-dashed border-border hover:border-accent/40 bg-surface-2/30 hover:bg-surface-2/60 transition-colors duration-500">
               <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMTI4LCAxMjgsIDEyOCwgMC4xKSIvPjwvc3ZnPg==')] opacity-50" />
               <div className="flex flex-col items-center justify-center py-24 px-6 text-center relative z-10">

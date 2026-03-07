@@ -87,12 +87,9 @@ const RowHeader = memo(function RowHeader({
       onDrop={onDragEnd}
       className="relative flex items-center justify-center select-none group flex-shrink-0 transition-colors"
       style={{
-        // FIX: Using the fixed constant for width, and dynamic 'height' prop for height
         width: GRID_CONSTANTS.HEADER_COL_WIDTH,
         minWidth: GRID_CONSTANTS.HEADER_COL_WIDTH,
         height, 
-        
-        // Dynamic Theme Colors
         backgroundColor: isDragOver
           ? "hsl(var(--accent) / 0.3)"
           : isDragging

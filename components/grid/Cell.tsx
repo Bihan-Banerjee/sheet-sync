@@ -96,7 +96,6 @@ const Cell = memo(function Cell({
     [cellId, editValue, onCommitEdit, onCancelEdit, onNavigate]
   );
 
-  // Corner resize drag
   const handleCornerMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -123,7 +122,6 @@ const Cell = memo(function Cell({
     [cellId, onCornerResize]
   );
 
-  // Format number display
   const formattedDisplay = useCallback((): string => {
     if (!format.numberFormat || displayValue === "" || isNaN(Number(displayValue))) {
       return displayValue;
@@ -149,7 +147,6 @@ const Cell = memo(function Cell({
     minHeight: height,
     position: "relative",
     backgroundColor: format.bgColor ?? undefined,
-    // Border styles
     ...(format.border === "all"    && { outline: "1px solid #3A3A50" }),
     ...(format.border === "outer"  && { outline: "1px solid #3A3A50" }),
     ...(format.border === "bottom" && { borderBottom: "1px solid #8B8BA7" }),
@@ -171,7 +168,6 @@ const Cell = memo(function Cell({
   const cellClass = [
     "grid-cell",
     isSelected ? "cell-selected" : "",
-    isInSelection && !isSelected ? "bg-accent-dim" : "",
   ].filter(Boolean).join(" ");
 
   const presenceBorder = presence ? `2px solid ${presence.color}` : undefined;
@@ -191,6 +187,17 @@ const Cell = memo(function Cell({
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
     >
+      {/* ── Selection Visual Polish ── */}
+      {/* Light blue overlay for cells inside a selection range */}
+      {isInSelection && !isSelected && (
+        <div className="absolute inset-0 bg-accent/20 pointer-events-none z-[2]" />
+      )}
+      
+      {/* Crisp inner border for the active/pivot cell */}
+      {isSelected && (
+        <div className="absolute inset-0 border-2 border-accent pointer-events-none z-[3]" />
+      )}
+
       {/* Presence name tag */}
       {presence && (
         <div

@@ -18,18 +18,17 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
-// Curated presence colour palette — 10 distinct colours
 const PRESENCE_COLORS = [
-  "#6366F1", // indigo
-  "#22D3EE", // cyan
-  "#F59E0B", // amber
-  "#22C55E", // green
-  "#EC4899", // pink
-  "#F97316", // orange
-  "#8B5CF6", // violet
-  "#14B8A6", // teal
-  "#EF4444", // red
-  "#84CC16", // lime
+  "#6366F1", 
+  "#22D3EE", 
+  "#F59E0B", 
+  "#22C55E", 
+  "#EC4899", 
+  "#F97316", 
+  "#8B5CF6", 
+  "#14B8A6", 
+  "#EF4444",
+  "#84CC16", 
 ] as const;
 
 function getRandomColor(): string {

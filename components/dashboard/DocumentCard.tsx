@@ -8,7 +8,7 @@ interface DocumentCardProps {
   isDeleting: boolean;
   onOpen: () => void;
   onDelete: () => void;
-  onRename: (newTitle: string) => void; // <-- New prop added
+  onRename: (newTitle: string) => void;
 }
 
 export default function DocumentCard({
@@ -28,7 +28,6 @@ export default function DocumentCard({
     ? formatRelativeTime(document.updatedAt.toDate())
     : "Just now";
 
-  // Focus the input automatically when rename is clicked
   useEffect(() => {
     if (isRenaming && inputRef.current) {
       inputRef.current.focus();
@@ -42,7 +41,7 @@ export default function DocumentCard({
     if (trimmed && trimmed !== document.title) {
       onRename(trimmed);
     } else {
-      setEditTitle(document.title); // reset if empty or unchanged
+      setEditTitle(document.title); 
     }
   };
 

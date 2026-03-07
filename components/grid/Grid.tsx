@@ -41,6 +41,8 @@ interface GridProps {
   // Reorder callbacks — Grid manages visual order, parent persists
   onColumnsReorder?: (from: number, to: number) => void;
   onRowsReorder?: (from: number, to: number) => void;
+  // Undo callback
+  onUndo?: () => void;
 }
 
 export default function Grid({
@@ -57,6 +59,7 @@ export default function Grid({
   onSelectionChange,
   onColumnsReorder,
   onRowsReorder,
+  onUndo,
 }: GridProps) {
   const { TOTAL_COLS, TOTAL_ROWS, DEFAULT_COL_WIDTH, DEFAULT_ROW_HEIGHT } =
     GRID_CONSTANTS;
@@ -255,13 +258,99 @@ export default function Grid({
     isDragging.current = false;
   }, [draggingRow, dragOverRow, onRowsReorder]);
 
+
+  // ── Clipboard Operations ──────────────────────────────────────────────────
+  const getSelectionText = useCallback(() => {
+    const rows: string[] = [];
+    const minR = Math.min(selection.start.row, selection.end.row);
+    const maxR = Math.max(selection.start.row, selection.end.row);
+    const minC = Math.min(selection.start.col, selection.end.col);
+    const maxC = Math.max(selection.start.col, selection.end.col);
+    for (let r = minR; r <= maxR; r++) {
+      const rowData: string[] = [];
+      for (let c = minC; c <= maxC; c++) {
+        const cellId = toCellId(r, c);
+        rowData.push(cells[cellId]?.computed || cells[cellId]?.raw || "");
+      }
+      rows.push(rowData.join("\t"));
+    }
+    return rows.join("\n");
+  }, [selection, cells]);
+
+  const clearSelection = useCallback(() => {
+    const minR = Math.min(selection.start.row, selection.end.row);
+    const maxR = Math.max(selection.start.row, selection.end.row);
+    const minC = Math.min(selection.start.col, selection.end.col);
+    const maxC = Math.max(selection.start.col, selection.end.col);
+    for (let r = minR; r <= maxR; r++) {
+      for (let c = minC; c <= maxC; c++) {
+        onCellChange(toCellId(r, c), "");
+      }
+    }
+  }, [selection, onCellChange]);
+
+  const handlePaste = useCallback((text: string) => {
+    const minR = Math.min(selection.start.row, selection.end.row);
+    const minC = Math.min(selection.start.col, selection.end.col);
+    const rows = text.split(/\r?\n/);
+    rows.forEach((row, rIdx) => {
+      const cols = row.split("\t");
+      cols.forEach((val, cIdx) => {
+        const targetR = minR + rIdx;
+        const targetC = minC + cIdx;
+        if (targetR <= TOTAL_ROWS && targetC <= TOTAL_COLS) {
+          onCellChange(toCellId(targetR, targetC), val);
+        }
+      });
+    });
+  }, [selection, TOTAL_ROWS, TOTAL_COLS, onCellChange]);
+
   // ── Keyboard navigation ───────────────────────────────────────────────────
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       if (editingCell) return;
       const tag = (e.target as HTMLElement).tagName.toLowerCase();
       if (tag === "input" || tag === "textarea") return;
+
+      const isMod = e.ctrlKey || e.metaKey;
+
+      if (isMod) {
+        switch (e.key.toLowerCase()) {
+          case 'c':
+            e.preventDefault();
+            const copyText = getSelectionText();
+            await navigator.clipboard.writeText(copyText);
+            break;
+          case 'v':
+            e.preventDefault();
+            try {
+              const pasteText = await navigator.clipboard.readText();
+              handlePaste(pasteText);
+            } catch (err) {
+              console.error("Clipboard permission denied", err);
+            }
+            break;
+          case 'x':
+            e.preventDefault();
+            const cutText = getSelectionText();
+            await navigator.clipboard.writeText(cutText);
+            clearSelection();
+            break;
+          case 'z':
+            e.preventDefault();
+            if (onUndo) onUndo();
+            break;
+          case 'a':
+            e.preventDefault();
+            setSelection({
+              start: { row: 1, col: 1 },
+              end: { row: TOTAL_ROWS, col: TOTAL_COLS }
+            });
+            break;
+        }
+        return;
+      }
 
       const pos = parseCellId(activeCell);
 
@@ -297,7 +386,7 @@ export default function Grid({
           break;
         case "Delete":
         case "Backspace":
-          if (cells[activeCell]?.raw) onCellChange(activeCell, "");
+          clearSelection(); // Allows multi-cell deletion with backspace
           break;
         case "F2":
           e.preventDefault();
@@ -312,19 +401,40 @@ export default function Grid({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeCell, editingCell, cells, TOTAL_ROWS, TOTAL_COLS, selectCell, navigate, handleStartEdit, onCellChange]);
+  }, [
+    activeCell, editingCell, TOTAL_ROWS, TOTAL_COLS, 
+    selectCell, navigate, handleStartEdit, clearSelection, 
+    getSelectionText, handlePaste, onUndo
+  ]);
 
   // ── Column / row select ───────────────────────────────────────────────────
 
   const handleSelectColumn = useCallback((letter: string) => {
     setSelectedCol(letter);
     setSelectedRow(null);
-  }, []);
+    
+    // Updates the internal visual multi-cell selection area
+    const colNum = colLetterToNumber(letter);
+    setSelection({
+      start: { row: 1, col: colNum },
+      end: { row: TOTAL_ROWS, col: colNum }
+    });
+    setActiveCell(toCellId(1, colNum));
+    onActiveCellChange(toCellId(1, colNum));
+  }, [TOTAL_ROWS, onActiveCellChange]);
 
   const handleSelectRow = useCallback((row: number) => {
     setSelectedRow(row);
     setSelectedCol(null);
-  }, []);
+    
+    // Updates the internal visual multi-cell selection area
+    setSelection({
+      start: { row: row, col: 1 },
+      end: { row: row, col: TOTAL_COLS }
+    });
+    setActiveCell(toCellId(row, 1));
+    onActiveCellChange(toCellId(row, 1));
+  }, [TOTAL_COLS, onActiveCellChange]);
 
   // ── Derived column/row arrays from order ──────────────────────────────────
 

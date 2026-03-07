@@ -13,8 +13,6 @@ export default function ExportMenu({ cells, docMeta }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const [exporting, setExporting] = useState<"csv" | "xlsx" | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -26,12 +24,9 @@ export default function ExportMenu({ cells, docMeta }: ExportMenuProps) {
     return () => window.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // ── Build 2D grid array from CellMap ─────────────────────────────────────
   const buildGrid = useCallback((): string[][] => {
     const { TOTAL_ROWS, TOTAL_COLS } = GRID_CONSTANTS;
     const grid: string[][] = [];
-
-    // Header row
     const header = ["", ...Array.from({ length: TOTAL_COLS }, (_, i) =>
       colNumberToLetter(i + 1)
     )];
@@ -47,15 +42,12 @@ export default function ExportMenu({ cells, docMeta }: ExportMenuProps) {
         rowData.push(value);
         if (value) hasData = true;
       }
-
-      // Only include rows that have at least one non-empty cell
       if (hasData) grid.push(rowData);
     }
 
     return grid;
   }, [cells]);
 
-  // ── Find last used row/col for trimmed export ────────────────────────────
   const getUsedRange = useCallback((): { maxRow: number; maxCol: number } => {
     const { TOTAL_ROWS, TOTAL_COLS } = GRID_CONSTANTS;
     let maxRow = 1;
@@ -74,14 +66,11 @@ export default function ExportMenu({ cells, docMeta }: ExportMenuProps) {
     return { maxRow, maxCol };
   }, [cells]);
 
-  // ── CSV export ────────────────────────────────────────────────────────────
   const exportCSV = useCallback(async () => {
     setExporting("csv");
     try {
       const { maxRow, maxCol } = getUsedRange();
       const rows: string[] = [];
-
-      // Column header row
       const headers = Array.from({ length: maxCol }, (_, i) =>
         colNumberToLetter(i + 1)
       );
@@ -105,17 +94,12 @@ export default function ExportMenu({ cells, docMeta }: ExportMenuProps) {
     }
   }, [cells, docMeta, getUsedRange]);
 
-  // ── XLSX export ───────────────────────────────────────────────────────────
   const exportXLSX = useCallback(async () => {
     setExporting("xlsx");
     try {
       const XLSX = await import("xlsx");
       const { maxRow, maxCol } = getUsedRange();
-
-      // Build array-of-arrays (no row/col headers for XLSX — cleaner)
       const data: string[][] = [];
-
-      // Column letters as header
       const header = Array.from({ length: maxCol }, (_, i) =>
         colNumberToLetter(i + 1)
       );
@@ -126,15 +110,12 @@ export default function ExportMenu({ cells, docMeta }: ExportMenuProps) {
         for (let col = 1; col <= maxCol; col++) {
           const cellId = toCellId(row, col);
           const val = cells[cellId]?.computed ?? "";
-          // Preserve numbers as numbers in XLSX
           rowData.push(val);
         }
         data.push(rowData);
       }
 
       const worksheet = XLSX.utils.aoa_to_sheet(data);
-
-      // Auto column widths
       const colWidths = Array.from({ length: maxCol }, (_, colIdx) => {
         let maxLen = 4;
         for (let row = 0; row < data.length; row++) {
@@ -233,8 +214,6 @@ export default function ExportMenu({ cells, docMeta }: ExportMenuProps) {
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function csvEscape(value: string): string {
   if (value.includes(",") || value.includes('"') || value.includes("\n")) {
     return `"${value.replace(/"/g, '""')}"`;
@@ -250,9 +229,6 @@ function triggerDownload(blob: Blob, filename: string): void {
   a.click();
   URL.revokeObjectURL(url);
 }
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
 function ExportIcon() {
   return (
     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

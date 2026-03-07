@@ -11,7 +11,6 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateData> = {
     cells: {
       "A1": { raw: "MONTHLY BUDGET", format: { bold: true, fontSize: 16, textColor: "#10B981" } },
       
-      // Income Section
       "A3": { raw: "INCOME", format: { bold: true, bgColor: "#10B98125" } },
       "B3": { raw: "Expected", format: { bold: true, align: "right" } },
       "C3": { raw: "Actual", format: { bold: true, align: "right" } },
@@ -83,12 +82,9 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateData> = {
   },
 
   "Habit Planner": {
-    // Narrow columns for the days of the week
     columnWidths: { A: 180, B: 45, C: 45, D: 45, E: 45, F: 45, G: 45, H: 45, I: 100 },
     cells: {
       "A1": { raw: "WEEKLY HABITS", format: { bold: true, fontSize: 16, textColor: "#EF4444" } },
-      
-      // Headers
       "A3": { raw: "Habit", format: { bold: true, bgColor: "#EF444425" } },
       "B3": { raw: "M", format: { bold: true, align: "center", bgColor: "#EF444425" } },
       "C3": { raw: "T", format: { bold: true, align: "center", bgColor: "#EF444425" } },
@@ -98,22 +94,16 @@ export const TEMPLATE_REGISTRY: Record<string, TemplateData> = {
       "G3": { raw: "S", format: { bold: true, align: "center", bgColor: "#EF444425" } },
       "H3": { raw: "S", format: { bold: true, align: "center", bgColor: "#EF444425" } },
       "I3": { raw: "Goal", format: { bold: true, align: "center", bgColor: "#EF444425" } },
-
-      // Habit 1
       "A4": { raw: "Morning Workout" },
       "B4": { raw: "x", format: { align: "center", textColor: "#10B981", bold: true } },
       "C4": { raw: "x", format: { align: "center", textColor: "#10B981", bold: true } },
       "D4": { raw: "-", format: { align: "center", textColor: "#EF4444" } },
       "I4": { raw: "5 Days", format: { align: "center", textColor: "#6B7280" } },
-
-      // Habit 2
       "A5": { raw: "Read 20 Pages" },
       "B5": { raw: "x", format: { align: "center", textColor: "#10B981", bold: true } },
       "C5": { raw: "-", format: { align: "center", textColor: "#EF4444" } },
       "D5": { raw: "x", format: { align: "center", textColor: "#10B981", bold: true } },
       "I5": { raw: "7 Days", format: { align: "center", textColor: "#6B7280" } },
-
-      // Habit 3
       "A6": { raw: "Drink 2L Water" },
       "B6": { raw: "x", format: { align: "center", textColor: "#10B981", bold: true } },
       "C6": { raw: "x", format: { align: "center", textColor: "#10B981", bold: true } },

@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useAppUser } from "@/hooks/useAuth";
 
 interface AuthModalProps {
-  /** Called after successful sign-in so parent can proceed */
   onSuccess?: () => void;
 }
 
@@ -17,8 +16,6 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Focus guest input when tab switches
   useEffect(() => {
     if (tab === "guest") {
       setTimeout(() => inputRef.current?.focus(), 80);
@@ -64,7 +61,6 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
   if (loading) return null;
 
   return (
-    /* Backdrop */
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Blurred dark overlay */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />

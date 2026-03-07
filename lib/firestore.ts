@@ -16,14 +16,12 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 
-// Generic types for Firestore documents
 export interface FirestoreDocument {
   id?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
 
-// Create a new document
 export async function createDocument<T extends FirestoreDocument>(
   collectionName: string, 
   data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>
@@ -41,7 +39,6 @@ export async function createDocument<T extends FirestoreDocument>(
   }
 }
 
-// Get all documents from a collection
 export async function getDocuments<T>(
   collectionName: string,
   constraints: Parameters<typeof query>[1][] = []
@@ -59,7 +56,6 @@ export async function getDocuments<T>(
   }
 }
 
-// Get a single document by ID
 export async function getDocument<T>(
   collectionName: string, 
   documentId: string
@@ -82,7 +78,6 @@ export async function getDocument<T>(
   }
 }
 
-// Update a document
 export async function updateDocument<T extends FirestoreDocument>(
   collectionName: string, 
   documentId: string, 
@@ -100,7 +95,6 @@ export async function updateDocument<T extends FirestoreDocument>(
   }
 }
 
-// Delete a document
 export async function deleteDocument(
   collectionName: string, 
   documentId: string
@@ -114,7 +108,6 @@ export async function deleteDocument(
   }
 }
 
-// Get documents by a specific field value
 export async function getDocumentsByField<T>(
   collectionName: string,
   fieldName: string,

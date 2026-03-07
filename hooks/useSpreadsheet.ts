@@ -36,6 +36,7 @@ interface UseSpreadsheetReturn {
   setColumnWidth: (letter: string, width: number) => void;
   setRowHeight: (row: number, height: number) => void;
   updateTitle: (title: string) => Promise<void>;
+  undo: () => void; 
 }
 
 export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
@@ -44,11 +45,30 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
   const [writeState, setWriteState] = useState<WriteState>("idle");
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [rowHeights, setRowHeights] = useState<Record<string, number>>({});
-
-  // Pending writes queue — batched by cellId
   const pendingWrites = useRef<Map<CellId, CellData>>(new Map());
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localCells = useRef<CellMap>({});
+  const [history, setHistory] = useState<CellMap[]>([]);
+  const [redoStack, setRedoStack] = useState<CellMap[]>([]);
+  const saveToHistory = useCallback(() => {
+    setHistory(prev => [...prev.slice(-49), { ...localCells.current }]);
+    setRedoStack([]);
+  }, []);
+  
+  const undo = useCallback(() => {
+    if (history.length === 0) return;
+    const prevState = history[history.length - 1];
+    const newHistory = history.slice(0, -1);
+    
+    setRedoStack(prev => [...prev, cells]); 
+    setHistory(newHistory);
+    localCells.current = prevState;
+    setCells(prevState);
+    Object.entries(prevState).forEach(([id, data]) => {
+      pendingWrites.current.set(id as CellId, data);
+    });
+    void flushWrites();
+  }, [cells, history]);
 
   // ── Listen to document metadata ──────────────────────────────────────────
   useEffect(() => {
@@ -65,7 +85,6 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
         setRowHeights(data.rowHeights ?? {});
       },
       (error) => {
-        // 🚨 ADDED ERROR HANDLER
         console.error("Firebase Document Read Error:", error);
       }
     );
@@ -96,13 +115,11 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
           }
         });
 
-        // Recompute all formulas after any remote change
         const recomputed = recomputeAllCells(localCells.current);
         localCells.current = recomputed;
         setCells({ ...recomputed });
       },
       (error) => {
-        // 🚨 ADDED ERROR HANDLER
         console.error("Firebase Cells Read Error:", error);
       }
     );
@@ -122,8 +139,6 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
       await Promise.all(
         Array.from(toWrite.entries()).map(([cellId, cellData]) => {
           const cellRef = doc(db, "documents", docId, "cells", cellId);
-          
-          // 🔥 FIREBASE FIX: Strip 'undefined' values which cause Firestore to crash
           const sanitizedData = JSON.parse(JSON.stringify(cellData));
 
           return setDoc(cellRef, {
@@ -132,21 +147,16 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
           });
         })
       );
-
-      // Update document's updatedAt
       await updateDoc(doc(db, "documents", docId), {
         updatedAt: serverTimestamp(),
       });
 
       setWriteState("saved");
-
-      // Reset to idle after 2s
       setTimeout(() => setWriteState("idle"), 2000);
     } catch (err) {
-      console.error("Firebase write failed:", err); // Added logging to help you debug future issues
+      console.error("Firebase write failed:", err); 
       setWriteState("error");
       
-      // Re-queue failed writes so data isn't lost
       toWrite.forEach((v, k) => pendingWrites.current.set(k, v));
     }
   }, [docId]);
@@ -154,9 +164,9 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
   // ── Set cell raw value ───────────────────────────────────────────────────
   const setCellRaw = useCallback(
     (cellId: CellId, raw: string, uid: string) => {
-      const existingFormat = localCells.current[cellId]?.format;
+      saveToHistory(); 
 
-      // Compute display value immediately for optimistic UI
+      const existingFormat = localCells.current[cellId]?.format;
       const tempCells: CellMap = {
         ...localCells.current,
         [cellId]: {
@@ -174,34 +184,28 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
         format: existingFormat,
         lastEditedBy: uid,
       };
-
-      // Optimistic local update
       localCells.current = {
         ...localCells.current,
         [cellId]: newCell,
       };
-
-      // Recompute all cells that depend on this one
       const recomputed = recomputeAllCells(localCells.current);
       localCells.current = recomputed;
       setCells({ ...recomputed });
-
-      // Queue write
       pendingWrites.current.set(cellId, recomputed[cellId] ?? newCell);
       setWriteState("saving");
-
-      // Debounce flush
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
       debounceTimer.current = setTimeout(() => {
         void flushWrites();
       }, GRID_CONSTANTS.DEBOUNCE_WRITE_MS);
     },
-    [flushWrites]
+    [flushWrites, saveToHistory]
   );
 
   // ── Set cell format ──────────────────────────────────────────────────────
   const setCellFormat = useCallback(
     (cellId: CellId, format: Partial<CellFormat>, uid: string) => {
+      saveToHistory(); 
+
       const existing = localCells.current[cellId];
       const updatedCell: CellData = {
         raw: existing?.raw ?? "",
@@ -224,7 +228,7 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
         void flushWrites();
       }, GRID_CONSTANTS.DEBOUNCE_WRITE_MS);
     },
-    [flushWrites]
+    [flushWrites, saveToHistory]
   );
 
     // ── Column width (DEBOUNCED) ─────────────────────────────────────────────
@@ -233,17 +237,13 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
       (letter: string, width: number) => {
         setColumnWidths((prev) => {
           const updated = { ...prev, [letter]: width };
-          
-          // Clear previous timer
           if (colTimer.current) clearTimeout(colTimer.current);
-          
-          // Debounce Firestore write
           colTimer.current = setTimeout(() => {
             void updateDoc(doc(db, "documents", docId), {
               columnWidths: updated,
               updatedAt: serverTimestamp(),
             });
-          }, 300); // Waits 300ms after you stop dragging
+          }, 300); 
           
           return updated;
         });
@@ -304,7 +304,6 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
   useEffect(() => {
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
-      // Flush any remaining writes on unmount
       if (pendingWrites.current.size > 0) void flushWrites();
     };
   }, [flushWrites]);
@@ -323,5 +322,6 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
     setColumnWidth,
     setRowHeight,
     updateTitle,
+    undo,
   };
 }
