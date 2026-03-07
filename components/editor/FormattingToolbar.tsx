@@ -27,7 +27,7 @@ const TEXT_COLORS = [
 const BG_COLORS = [
   { color: "transparent", label: "None" },
   { color: "#EF444425", label: "Red" },
-  { color: "#F97316255", label: "Orange" },
+  { color: "#F9731625", label: "Orange" },
   { color: "#F59E0B25", label: "Amber" },
   { color: "#22C55E25", label: "Green" },
   { color: "#22D3EE25", label: "Cyan" },
@@ -59,8 +59,8 @@ const FormattingToolbar = memo(function FormattingToolbar({
   const disabled = !activeCellId;
 
   return (
-    <div className="relative border-b border-border bg-surface flex-shrink-0 select-none">
-    <div className="flex items-center gap-0.5 px-2 h-9 overflow-x-auto scrollbar-none">
+    <div className="relative z-40 border-b border-border bg-surface flex-shrink-0 select-none">
+    <div className="flex items-center gap-0.5 px-2 py-1 min-h-[36px] flex-wrap">
 
 
       {/* ── Font size ──────────────────────────────────────────────────── */}
