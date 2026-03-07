@@ -55,13 +55,20 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
     if (!docId) return;
     const docRef = doc(db, "documents", docId);
 
-    const unsub = onSnapshot(docRef, (snap) => {
-      if (!snap.exists()) return;
-      const data = snap.data() as Omit<SpreadsheetDocument, "id">;
-      setDocMeta({ id: snap.id, ...data });
-      setColumnWidths(data.columnWidths ?? {});
-      setRowHeights(data.rowHeights ?? {});
-    });
+    const unsub = onSnapshot(
+      docRef, 
+      (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data() as Omit<SpreadsheetDocument, "id">;
+        setDocMeta({ id: snap.id, ...data });
+        setColumnWidths(data.columnWidths ?? {});
+        setRowHeights(data.rowHeights ?? {});
+      },
+      (error) => {
+        // 🚨 ADDED ERROR HANDLER
+        console.error("Firebase Document Read Error:", error);
+      }
+    );
 
     return () => unsub();
   }, [docId]);
@@ -71,27 +78,34 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
     if (!docId) return;
     const cellsRef = collection(db, "documents", docId, "cells");
 
-    const unsub = onSnapshot(cellsRef, (snap) => {
-      snap.docChanges().forEach((change) => {
-        const cellId = change.doc.id as CellId;
-        if (change.type === "removed") {
-          const updatedCells = { ...localCells.current };
-          delete updatedCells[cellId];
-          localCells.current = updatedCells;
-        } else {
-          const data = change.doc.data() as CellData;
-          localCells.current = {
-            ...localCells.current,
-            [cellId]: data,
-          };
-        }
-      });
+    const unsub = onSnapshot(
+      cellsRef, 
+      (snap) => {
+        snap.docChanges().forEach((change) => {
+          const cellId = change.doc.id as CellId;
+          if (change.type === "removed") {
+            const updatedCells = { ...localCells.current };
+            delete updatedCells[cellId];
+            localCells.current = updatedCells;
+          } else {
+            const data = change.doc.data() as CellData;
+            localCells.current = {
+              ...localCells.current,
+              [cellId]: data,
+            };
+          }
+        });
 
-      // Recompute all formulas after any remote change
-      const recomputed = recomputeAllCells(localCells.current);
-      localCells.current = recomputed;
-      setCells({ ...recomputed });
-    });
+        // Recompute all formulas after any remote change
+        const recomputed = recomputeAllCells(localCells.current);
+        localCells.current = recomputed;
+        setCells({ ...recomputed });
+      },
+      (error) => {
+        // 🚨 ADDED ERROR HANDLER
+        console.error("Firebase Cells Read Error:", error);
+      }
+    );
 
     return () => unsub();
   }, [docId]);
@@ -108,8 +122,12 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
       await Promise.all(
         Array.from(toWrite.entries()).map(([cellId, cellData]) => {
           const cellRef = doc(db, "documents", docId, "cells", cellId);
+          
+          // 🔥 FIREBASE FIX: Strip 'undefined' values which cause Firestore to crash
+          const sanitizedData = JSON.parse(JSON.stringify(cellData));
+
           return setDoc(cellRef, {
-            ...cellData,
+            ...sanitizedData,
             updatedAt: serverTimestamp(),
           });
         })
@@ -124,9 +142,11 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
 
       // Reset to idle after 2s
       setTimeout(() => setWriteState("idle"), 2000);
-    } catch {
+    } catch (err) {
+      console.error("Firebase write failed:", err); // Added logging to help you debug future issues
       setWriteState("error");
-      // Re-queue failed writes
+      
+      // Re-queue failed writes so data isn't lost
       toWrite.forEach((v, k) => pendingWrites.current.set(k, v));
     }
   }, [docId]);
