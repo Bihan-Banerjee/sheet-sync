@@ -1,26 +1,32 @@
 "use client";
 
-import { useState, useCallback, use } from "react"; // <-- Added `use` here
+import { useState, useCallback, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
 import Grid from "@/components/grid/Grid";
 import FormattingToolbar from "@/components/editor/FormattingToolbar";
 import ExportMenu from "@/components/editor/ExportMenu";
 import SyncIndicator from "@/components/editor/SyncIndicator";
-import { ThemeToggle } from "@/components/ThemeToggle"; // <-- Added ThemeToggle here
+import { ThemeToggle } from "@/components/ThemeToggle";
+import ShareButton from "@/components/editor/ShareButton";
+import AuthModal from "@/components/auth/AuthModal";
+
 import { useSpreadsheet } from "@/hooks/useSpreadsheet";
 import { usePresence } from "@/hooks/usePresence";
 import { useAppUser } from "@/hooks/useAuth";
 import type { CellId, CellFormat } from "@/types";
 
-// Update the props type to expect a Promise for Next.js 15
 export default function DocumentPage(props: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { appUser, loading } = useAppUser();
   
-  // Unwrap the params Promise safely
+  // 1. Unwrap params FIRST
   const params = use(props.params);
   const docId = params.id;
 
+  // 2. Call ALL Hooks unconditionally before any early returns
   const {
     cells,
     docMeta,
@@ -53,11 +59,19 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
     if (appUser) setCellRaw(cellId, raw, appUser.uid);
   }, [appUser, setCellRaw]);
 
+  // Track access for shared users
+  useEffect(() => {
+    if (appUser && docMeta && (!docMeta.accessedBy || !docMeta.accessedBy.includes(appUser.uid))) {
+      updateDoc(doc(db, "documents", docId), {
+        accessedBy: arrayUnion(appUser.uid)
+      }).catch(console.error);
+    }
+  }, [appUser, docMeta, docId]);
+
+
+  // 3. EARLY RETURNS GO HERE (After all hooks have safely executed)
   if (loading) return null;
-  if (!appUser) {
-    router.push("/");
-    return null;
-  }
+  if (!appUser) return <AuthModal />;
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
@@ -106,6 +120,8 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
           {/* Action Buttons */}
           <ThemeToggle />
           <ExportMenu cells={cells} docMeta={docMeta} />
+          <div className="w-px h-5 bg-border mx-1" />
+          <ShareButton />
         </div>
       </header>
 

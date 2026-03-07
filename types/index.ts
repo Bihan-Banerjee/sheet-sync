@@ -57,6 +57,7 @@ export interface SpreadsheetDocument {
   title: string;
   ownerId: string;
   ownerName: string;
+  accessedBy?: string[];
   /** Column widths keyed by letter */
   columnWidths?: Record<string, number>;
   /** Row heights keyed by 1-indexed row number string */

@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!appUser) return;
-    const q = query(collection(db, "documents"), where("ownerId", "==", appUser.uid), orderBy("updatedAt", "desc"));
+    const q = query(collection(db, "documents"), where("accessedBy", "array-contains", appUser.uid), orderBy("updatedAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       setDocuments(snap.docs.map((d) => ({ id: d.id, ...d.data() })) as SpreadsheetDocument[]);
       setDocsLoading(false);
@@ -43,7 +43,7 @@ export default function DashboardPage() {
     setCreating(true);
     try {
       const docRef = await addDoc(collection(db, "documents"), {
-        title, ownerId: appUser.uid, ownerName: appUser.displayName, columnWidths: {}, rowHeights: {}, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+        title, ownerId: appUser.uid, ownerName: appUser.displayName, accessedBy: [appUser.uid], columnWidths: {}, rowHeights: {}, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
       });
       addToast(`Created "${title}"`, "success");
       router.push(`/doc/${docRef.id}`);
