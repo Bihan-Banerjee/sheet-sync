@@ -1,59 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Sora:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
+:root {
+  --background: #0A0A0F;
+  --surface: #111118;
+  --accent: #6366F1;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--background);
+  color: #F1F1F5;
+  font-family: "Sora", system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111118;
+}
+::-webkit-scrollbar-thumb {
+  background: #2A2A3A;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3A3A50;
+}
+::-webkit-scrollbar-corner {
+  background: #111118;
+}
+
+/* Cell selection */
+.cell-selected {
+  box-shadow: 0 0 0 2px #6366F1 inset;
+  background-color: #6366F108;
+}
+
+.cell-editing {
+  box-shadow: 0 0 0 2px #6366F1 inset, 0 0 0 4px #6366F120;
+  background-color: #111118;
+  z-index: 10;
+}
+
+/* Presence colored borders on cells */
+.cell-presence {
+  box-shadow: 0 0 0 2px var(--presence-color) inset;
+}
+
+/* Stagger animation utility */
+.stagger-children > *:nth-child(1)  { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2)  { animation-delay: 0.10s; }
+.stagger-children > *:nth-child(3)  { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4)  { animation-delay: 0.20s; }
+.stagger-children > *:nth-child(5)  { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6)  { animation-delay: 0.30s; }
+.stagger-children > *:nth-child(7)  { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8)  { animation-delay: 0.40s; }
+
+/* Grid cell base */
+.grid-cell {
+  font-family: "DM Mono", monospace;
+  font-size: 13px;
+  padding: 0 6px;
+  border-right: 1px solid #2A2A3A;
+  border-bottom: 1px solid #2A2A3A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: cell;
+  position: relative;
+  background: #0A0A0F;
+  color: #F1F1F5;
+  outline: none;
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  transition: background 0.1s;
+}
+
+.grid-cell:hover:not(.cell-selected):not(.cell-editing) {
+  background: #111118;
+}
+
+/* Formula bar */
+.formula-bar {
+  font-family: "DM Mono", monospace;
+  font-size: 13px;
+  background: #111118;
+  border: 1px solid #2A2A3A;
+  color: #F1F1F5;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.formula-bar:focus {
+  border-color: #6366F1;
+}
+
+/* Toast */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast {
+  animation: toastIn 0.2s ease forwards;
 }
