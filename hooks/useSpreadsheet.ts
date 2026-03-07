@@ -207,35 +207,51 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
     [flushWrites]
   );
 
-  // ── Column width ─────────────────────────────────────────────────────────
-  const setColumnWidth = useCallback(
-    (letter: string, width: number) => {
-      setColumnWidths((prev) => {
-        const updated = { ...prev, [letter]: width };
-        void updateDoc(doc(db, "documents", docId), {
-          columnWidths: updated,
-          updatedAt: serverTimestamp(),
+    // ── Column width (DEBOUNCED) ─────────────────────────────────────────────
+    const colTimer = useRef<NodeJS.Timeout | null>(null);
+    const setColumnWidth = useCallback(
+      (letter: string, width: number) => {
+        setColumnWidths((prev) => {
+          const updated = { ...prev, [letter]: width };
+          
+          // Clear previous timer
+          if (colTimer.current) clearTimeout(colTimer.current);
+          
+          // Debounce Firestore write
+          colTimer.current = setTimeout(() => {
+            void updateDoc(doc(db, "documents", docId), {
+              columnWidths: updated,
+              updatedAt: serverTimestamp(),
+            });
+          }, 300); // Waits 300ms after you stop dragging
+          
+          return updated;
         });
-        return updated;
-      });
-    },
-    [docId]
-  );
-
-  // ── Row height ───────────────────────────────────────────────────────────
-  const setRowHeight = useCallback(
-    (row: number, height: number) => {
-      setRowHeights((prev) => {
-        const updated = { ...prev, [String(row)]: height };
-        void updateDoc(doc(db, "documents", docId), {
-          rowHeights: updated,
-          updatedAt: serverTimestamp(),
+      },
+      [docId]
+    );
+  
+    // ── Row height (DEBOUNCED) ───────────────────────────────────────────────
+    const rowTimer = useRef<NodeJS.Timeout | null>(null);
+    const setRowHeight = useCallback(
+      (row: number, height: number) => {
+        setRowHeights((prev) => {
+          const updated = { ...prev, [String(row)]: height };
+          
+          if (rowTimer.current) clearTimeout(rowTimer.current);
+          
+          rowTimer.current = setTimeout(() => {
+            void updateDoc(doc(db, "documents", docId), {
+              rowHeights: updated,
+              updatedAt: serverTimestamp(),
+            });
+          }, 300);
+          
+          return updated;
         });
-        return updated;
-      });
-    },
-    [docId]
-  );
+      },
+      [docId]
+    );
 
   // ── Update title ─────────────────────────────────────────────────────────
   const updateTitle = useCallback(

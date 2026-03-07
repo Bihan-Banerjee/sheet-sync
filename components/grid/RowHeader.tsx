@@ -87,21 +87,24 @@ const RowHeader = memo(function RowHeader({
       onDrop={onDragEnd}
       className="relative flex items-center justify-center select-none group flex-shrink-0 transition-colors"
       style={{
+        // FIX: Using the fixed constant for width, and dynamic 'height' prop for height
         width: GRID_CONSTANTS.HEADER_COL_WIDTH,
         minWidth: GRID_CONSTANTS.HEADER_COL_WIDTH,
-        height,
+        height, 
+        
+        // Dynamic Theme Colors
         backgroundColor: isDragOver
-          ? "#6366F130"
+          ? "hsl(var(--accent) / 0.3)"
           : isDragging
-          ? "#6366F110"
+          ? "hsl(var(--accent) / 0.1)"
           : isSelected
-          ? "#6366F118"
-          : "#111118",
-        borderRight: "1px solid #2A2A3A",
-        borderBottom: isDragOver ? "2px solid #6366F1" : "1px solid #2A2A3A",
+          ? "hsl(var(--accent) / 0.15)"
+          : "hsl(var(--surface-2))",
+        borderRight: "1px solid hsl(var(--border-bright))",
+        borderBottom: isDragOver ? "2px solid hsl(var(--accent))" : "1px solid hsl(var(--border-bright))",
         cursor: isDragging ? "grabbing" : "grab",
-        opacity: isDragging ? 0.5 : 1,
-        transition: "background-color 0.1s, border-color 0.1s, opacity 0.1s",
+        opacity: isDragging ? 0.7 : 1,
+        transition: "background-color 0.15s, border-color 0.15s",
       }}
       onClick={() => onSelectRow(rowIndex)}
     >
@@ -113,8 +116,8 @@ const RowHeader = memo(function RowHeader({
       </div>
 
       <span
-        className="font-mono text-[11px] pointer-events-none"
-        style={{ color: isSelected || isDragOver ? "#6366F1" : "#8B8BA7" }}
+        className="font-mono text-[11px] font-semibold pointer-events-none transition-colors"
+        style={{ color: isSelected || isDragOver ? "hsl(var(--accent))" : "hsl(var(--text-dim))" }}
       >
         {rowIndex}
       </span>
