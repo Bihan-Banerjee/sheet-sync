@@ -15,7 +15,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
+      {/* Add suppressHydrationWarning here */}
+      <body suppressHydrationWarning>
         <AuthProvider>
           <ToastProvider>
             {children}

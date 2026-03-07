@@ -1,5 +1,5 @@
 "use client";
-
+import ExportMenu from "@/components/editor/ExportMenu";
 import { memo, useCallback } from "react";
 import type { CellFormat, CellId } from "@/types";
 
@@ -37,6 +37,7 @@ const FormattingToolbar = memo(function FormattingToolbar({
   const disabled = !activeCellId;
 
   return (
+
     <div className="flex items-center gap-1 px-3 h-9 border-b border-border bg-surface flex-shrink-0 overflow-x-auto">
       {/* Bold */}
       <ToolButton

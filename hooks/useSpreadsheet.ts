@@ -75,8 +75,9 @@ export function useSpreadsheet(docId: string): UseSpreadsheetReturn {
       snap.docChanges().forEach((change) => {
         const cellId = change.doc.id as CellId;
         if (change.type === "removed") {
-          localCells.current = { ...localCells.current };
-          delete localCells.current[cellId];
+          const updatedCells = { ...localCells.current };
+          delete updatedCells[cellId];
+          localCells.current = updatedCells;
         } else {
           const data = change.doc.data() as CellData;
           localCells.current = {

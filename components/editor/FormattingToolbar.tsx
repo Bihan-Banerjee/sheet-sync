@@ -23,7 +23,7 @@ const FONT_SIZES = [10, 11, 12, 13, 14, 16, 18, 20, 24] as const;
 
 const FormattingToolbar = memo(function FormattingToolbar({
   activeCellId,
-  format,
+  format={},
   onFormat,
 }: FormattingToolbarProps) {
   const apply = useCallback(

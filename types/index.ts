@@ -168,7 +168,7 @@ export function toCellId(row: number, col: number): CellId {
 /** Parse a CellId into row + col position: "B3" → { row: 3, col: 2 } */
 export function parseCellId(cellId: CellId): CellPosition {
   const match = /^([A-Z]+)(\d+)$/.exec(cellId.toUpperCase());
-  if (!match ?? !match![1] ?? !match![2]) {
+  if (!match || !match[1] || !match[2]) {
     throw new Error(`Invalid cellId: ${cellId}`);
   }
   const col = colLetterToNumber(match![1]!);
