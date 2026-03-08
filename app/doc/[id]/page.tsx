@@ -16,7 +16,7 @@ import { useSpreadsheet } from "@/hooks/useSpreadsheet";
 import { usePresence } from "@/hooks/usePresence";
 import { useAppUser } from "@/hooks/useAuth";
 import type { CellId, CellFormat } from "@/types";
-
+import { Logo } from "@/components/ui/Logo";
 export default function DocumentPage(props: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { appUser, loading } = useAppUser();
@@ -74,13 +74,16 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
       {/* Header */}
       <header className="h-14 border-b border-border bg-surface flex items-center justify-between px-4 flex-shrink-0">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push("/")}
-            className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-          >
-            &larr; Dashboard
-          </button>
-          <div className="w-px h-4 bg-border" />
+          
+          {/* Logo & Brand Name Container */}
+          <div className="flex items-center gap-2 transition-opacity hover:opacity-80 cursor-pointer" onClick={() => router.push("/")}>
+            <Logo className="flex" variant="icon-only" />
+            <span className="hidden sm:block font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary">
+              SheetSync
+            </span>
+          </div>
+
+          <div className="w-px h-5 bg-border mx-1" />
           
           {/* Inline Title Editor */}
           {isEditingTitle ? (
@@ -105,7 +108,7 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
                   setIsEditingTitle(false);
                 }
               }}
-              className="font-medium text-text-primary bg-surface-2 border border-accent rounded px-2 outline-none w-[200px] sm:w-[300px] h-7 shadow-inner"
+              className="font-medium text-text-primary bg-surface-2 border border-accent rounded px-2 outline-none w-[150px] sm:w-[250px] h-7 shadow-inner"
             />
           ) : (
             <h1
@@ -113,7 +116,7 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
                 setTitleInput(docMeta?.title || "");
                 setIsEditingTitle(true);
               }}
-              className="font-medium text-text-primary truncate max-w-[200px] sm:max-w-xs cursor-text hover:bg-surface-2 px-2 py-0.5 -ml-2 rounded transition-colors border border-transparent hover:border-border"
+              className="font-medium text-text-primary truncate max-w-[150px] sm:max-w-[250px] cursor-text hover:bg-surface-2 px-2 py-0.5 -ml-2 rounded transition-colors border border-transparent hover:border-border"
               title="Click to rename"
             >
               {docMeta?.title || "Loading..."}
@@ -147,7 +150,6 @@ export default function DocumentPage(props: { params: Promise<{ id: string }> })
           <ShareButton />
         </div>
       </header>
-
       {/* Formatting Toolbar */}
       <FormattingToolbar
         activeCellId={activeCellId}

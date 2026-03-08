@@ -1,5 +1,5 @@
 "use client";
-
+import { Logo } from "@/components/ui/Logo";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { collection, query, where, orderBy, onSnapshot, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, writeBatch } from "firebase/firestore";
@@ -134,11 +134,10 @@ export default function DashboardPage() {
       {/* Glassmorphism Header */}
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/70 backdrop-blur-2xl transition-all supports-[backdrop-filter]:bg-background/40">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center shadow-lg shadow-accent/20 border border-white/10">
-              <FileSpreadsheet className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
-            <span className="font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary">
+          <div className="flex items-center animate-in fade-in slide-in-from-top-4 gap-3 duration-500">
+            <Logo className="hidden sm:flex" variant="full" />
+            <Logo className="flex sm:hidden" variant="icon-only" />
+            <span className="hidden sm:block font-bold text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-text-primary to-text-secondary">
               SheetSync
             </span>
           </div>

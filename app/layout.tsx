@@ -7,6 +7,10 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 export const metadata: Metadata = {
   title: "SheetSync — Real-time Collaborative Spreadsheets",
   description: "A fast, real-time collaborative spreadsheet built with Next.js and Firebase.",
+  icons: {
+    icon: "/favicon.ico", 
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
